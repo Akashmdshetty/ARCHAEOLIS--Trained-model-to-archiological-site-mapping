@@ -1,0 +1,40 @@
+# AI-Driven Archaeological Site Mapping — Configuration
+
+dataset:
+  raw_images_dir: "data/raw_images"   # relative path for hosting
+  path: "data/processed"                               # where processed images go
+  image_size: 224
+
+training:
+  batch_size: 16       # safe for CPU and GPU
+  epochs: 30           # BYOL pre-training epochs
+  learning_rate: 0.0003
+  num_workers: 0       # 0 = required on Windows to avoid multiprocessing errors
+
+model:
+  backbone: "resnet18"
+  projection_dim: 256
+  checkpoint_dir: "models/checkpoints/ssl"
+
+analysis_heads:
+  epochs: 20
+  learning_rate: 0.001
+  checkpoint_dir: "models/checkpoints/analysis"
+
+classifier:
+  epochs: 15
+  learning_rate: 0.0003
+  hidden_dim: 512
+  num_classes: 5
+  classes: ["cloudy", "desert", "green_area", "vehicles", "water"]
+  checkpoint_dir: "models/checkpoints/classifier"
+  best_checkpoint: "models/checkpoints/classifier/sat_classifier_best.pth"
+
+clustering:
+  n_clusters: 5
+  dbscan_eps: 4.5
+  dbscan_min_samples: 5
+
+visualization:
+  umap_n_neighbors: 15
+  umap_min_dist: 0.1

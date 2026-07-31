@@ -1,0 +1,21 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Large Datasets & Splits (source data on local drive)
+data/sat_data_split/
+data/raw/
+data/processed/*.jpg
+data/processed/*.png
+
+# Environments & IDEs
+.venv/
+venv/
+ENV/
+.idea/
+.vscode/
+
+# OS specific files
+.DS_Store
+Thumbs.db

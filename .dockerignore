@@ -1,0 +1,32 @@
+# Git and environment
+.git/
+.gitignore
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Built packages
+build/
+dist/
+*.egg-info/
+
+# Project specific
+test_output/
+*.zip
+*.tar.gz
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# User generated contents that shouldn't be baked in (optional)
+# data/
+# models/*.pth
