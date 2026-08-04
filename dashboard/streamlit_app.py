@@ -482,18 +482,28 @@ elif st.session_state.mode == 'Portal':
             st.session_state.scan_radius_km = 2.0
 
         # Location Search Controls
-        c_search1, c_search2, c_search3 = st.columns([3, 1.5, 1])
+        c_search1, c_btn, c_search2, c_search3 = st.columns([2.5, 1, 1.6, 0.9])
         with c_search1:
-            search_query = st.text_input("🔍 Search Location / Site Name", placeholder="e.g. Rome, Machu Picchu, Petra, Pompeii, Giza, Stonehenge, Athens...")
+            search_query = st.text_input("🔍 Search Location / Site Name", placeholder="e.g. Mudigere, Rome, Machu Picchu, Petra, Giza...")
+        with c_btn:
+            st.markdown('<div style="height: 28px;"></div>', unsafe_allow_html=True)
+            search_clicked = st.button("🔎 Search", key="btn_map_search", use_container_width=True)
         with c_search2:
             preset_choice = st.selectbox("📍 Famous Presets", ["-- Quick Presets --", "Machu Picchu", "Petra", "Pompeii", "Giza Pyramids", "Rome Colosseum", "Stonehenge", "Athens Acropolis", "Angkor Wat", "Chichen Itza", "Hampi", "Varanasi"])
-        with c_search3:
+        with c_radius if 'c_radius' in locals() else c_search3:
             scan_radius = st.number_input("⭕ Radius (km)", min_value=0.5, max_value=10.0, value=float(st.session_state.scan_radius_km), step=0.5)
             st.session_state.scan_radius_km = scan_radius
 
         # Handle Search Action
         target_lat, target_lon, place_title = None, None, None
-        if search_query:
+        if search_clicked:
+            if search_query and search_query.strip():
+                target_lat, target_lon, place_title = lookup_place_coordinates(search_query)
+                if target_lat is None:
+                    st.warning(f"⚠️ Location '{search_query}' not found. Try searching another city, town, or landmark name.", icon="🔍")
+            else:
+                st.info("💡 Please type a location or landmark name in the search field first.", icon="ℹ️")
+        elif search_query and search_query.strip():
             target_lat, target_lon, place_title = lookup_place_coordinates(search_query)
         elif preset_choice != "-- Quick Presets --":
             target_lat, target_lon, place_title = lookup_place_coordinates(preset_choice)
