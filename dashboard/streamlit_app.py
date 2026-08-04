@@ -71,20 +71,17 @@ def local_css():
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap');
     
-    .main {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    .stApp, .main, [data-testid="stAppViewContainer"] {
+        background: #05090F !important;
+        background-color: #05090F !important;
         color: #f8fafc;
         font-family: 'Inter', sans-serif;
     }
     
-    .stApp {
-        background: transparent;
-    }
-    
     .glass-card {
-        background: rgba(30, 41, 59, 0.7);
+        background: rgba(15, 23, 42, 0.8) !important;
         backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(0, 229, 255, 0.2) !important;
         border-radius: 20px;
         padding: 2rem;
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
@@ -156,73 +153,76 @@ import streamlit.components.v1 as components
 def inject_particle_bg(canvas_id='particleCanvas'):
     _js = (
         "(function(){"
-        "  var CID = '" + canvas_id + r"';"
-        "  if(!window.parent||window.parent.document.getElementById(CID)) return;"
-        "  var pd=window.parent.document;"
-        "  pd.body.style.backgroundColor='#05090F';"
-        "  var wrap=pd.createElement('div');"
-        "  wrap.id=CID+'_wrap';"
-        "  wrap.style.cssText='position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:-9999;pointer-events:none;overflow:hidden;';"
-        "  var grid=pd.createElement('div');"
-        "  grid.style.cssText='position:absolute;inset:0;background-image:linear-gradient(rgba(0,255,170,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,170,0.06) 1px,transparent 1px);background-size:40px 40px;';"
-        "  wrap.appendChild(grid);"
-        "  var cv=pd.createElement('canvas');"
-        "  cv.id=CID; cv.style.cssText='position:absolute;top:0;left:0;opacity:0.75;';"
-        "  wrap.appendChild(cv); pd.body.appendChild(wrap);"
-        "  var _pst=pd.getElementById('pcss');if(!_pst){_pst=pd.createElement('style');_pst.id='pcss';_pst.textContent='.stApp,.main,.block-container,[data-testid=stAppViewBlockContainer],[data-testid=stVerticalBlock],[data-testid=stMarkdownContainer]{background:transparent!important;background-color:transparent!important} .glass-card{background:rgba(15,23,42,0.7)!important;backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,0.2)!important;border-radius:15px;padding:20px;margin-bottom:20px;} iframe{background:transparent !important;}';pd.head.appendChild(_pst)}"  
-        "  var ctx=cv.getContext('2d'),pts=[],N=120,mx=-9999,my=-9999;"
-        "  function upd(e){mx=e.clientX;my=e.clientY;}"
-        "  pd.addEventListener('mousemove',upd,true);"
-        "  window.addEventListener('mousemove',upd,true);"
-        "  window.parent.addEventListener('message',function(e){if(e.data.type==='mousemove'){mx=e.data.x;my=e.data.y;}},false);"
-        "  function mk(){"
-        "    var s=4+Math.random()*5;"
-        "    return{x:Math.random()*cv.width,y:Math.random()*cv.height,s:s,bs:s,"
-        "           sx:(Math.random()-0.5)*0.45,sy:(Math.random()-0.5)*0.45,"
-        "           h:Math.random()>0.5?'0,255,170':'0,229,255',a:0.5+Math.random()*0.5};"
-        "  }"
-        "  function init(){"
-        "    cv.width=pd.defaultView.innerWidth;cv.height=pd.defaultView.innerHeight;"
-        "    pts=[];for(var i=0;i<N;i++)pts.push(mk());"
-        "  }"
-        "  function draw(){"
-        "    ctx.clearRect(0,0,cv.width,cv.height);"
-        "    for(var i=0;i<pts.length;i++){"
-        "      var p=pts[i];"
-        "      var dx=mx-p.x,dy=my-p.y,d=Math.sqrt(dx*dx+dy*dy),MD=180;"
-        "      if(d<MD){var f=(MD-d)/MD;p.x-=(dx/d)*f*6;p.y-=(dy/d)*f*6;p.s=p.bs+f*4;}"
-        "      else{p.s+=(p.bs-p.s)*0.08;}"
-        "      p.x+=p.sx;p.y+=p.sy;"
-        "      if(p.x<0)p.x=cv.width;if(p.x>cv.width)p.x=0;"
-        "      if(p.y<0)p.y=cv.height;if(p.y>cv.height)p.y=0;"
-        "      var g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.s*2.5);"
-        "      g.addColorStop(0,'rgba('+p.h+','+p.a+')');"
-        "      g.addColorStop(0.5,'rgba('+p.h+','+(p.a*0.4)+')');"
-        "      g.addColorStop(1,'rgba('+p.h+',0)');"
-        "      ctx.beginPath();ctx.arc(p.x,p.y,p.s*2.5,0,Math.PI*2);"
-        "      ctx.fillStyle=g;ctx.fill();"
-        "      ctx.beginPath();ctx.arc(p.x,p.y,p.s*0.45,0,Math.PI*2);"
-        "      ctx.fillStyle='rgba('+p.h+','+p.a+')';ctx.fill();"
-        "      for(var j=i+1;j<pts.length;j++){"
-        "        var q=pts[j],dd=Math.hypot(p.x-q.x,p.y-q.y);"
-        "        if(dd<140){"
-        "          ctx.strokeStyle='rgba(0,255,170,'+(1-dd/140)*0.65+')';"
-        "          ctx.lineWidth=2.5;"
-        "          ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke();"
+        "  try {"
+        "    var CID = '" + canvas_id + r"';"
+        "    if(!window.parent || !window.parent.document) return;"
+        "    var pd=window.parent.document;"
+        "    if(pd.getElementById(CID)) return;"
+        "    pd.body.style.backgroundColor='#05090F';"
+        "    var wrap=pd.createElement('div');"
+        "    wrap.id=CID+'_wrap';"
+        "    wrap.style.cssText='position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:-9999;pointer-events:none;overflow:hidden;';"
+        "    var grid=pd.createElement('div');"
+        "    grid.style.cssText='position:absolute;inset:0;background-image:linear-gradient(rgba(0,255,170,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,170,0.06) 1px,transparent 1px);background-size:40px 40px;';"
+        "    wrap.appendChild(grid);"
+        "    var cv=pd.createElement('canvas');"
+        "    cv.id=CID; cv.style.cssText='position:absolute;top:0;left:0;opacity:0.75;';"
+        "    wrap.appendChild(cv); pd.body.appendChild(wrap);"
+        "    var ctx=cv.getContext('2d'),pts=[],N=120,mx=-9999,my=-9999;"
+        "    function upd(e){mx=e.clientX;my=e.clientY;}"
+        "    pd.addEventListener('mousemove',upd,true);"
+        "    window.addEventListener('mousemove',upd,true);"
+        "    function mk(){"
+        "      var s=4+Math.random()*5;"
+        "      return{x:Math.random()*cv.width,y:Math.random()*cv.height,s:s,bs:s,"
+        "             sx:(Math.random()-0.5)*0.45,sy:(Math.random()-0.5)*0.45,"
+        "             h:Math.random()>0.5?'0,255,170':'0,229,255',a:0.5+Math.random()*0.5};"
+        "    }"
+        "    function init(){"
+        "      cv.width=pd.defaultView.innerWidth;cv.height=pd.defaultView.innerHeight;"
+        "      pts=[];for(var i=0;i<N;i++)pts.push(mk());"
+        "    }"
+        "    function draw(){"
+        "      ctx.clearRect(0,0,cv.width,cv.height);"
+        "      for(var i=0;i<pts.length;i++){"
+        "        var p=pts[i];"
+        "        var dx=mx-p.x,dy=my-p.y,d=Math.sqrt(dx*dx+dy*dy),MD=180;"
+        "        if(d<MD){var f=(MD-d)/MD;p.x-=(dx/d)*f*6;p.y-=(dy/d)*f*6;p.s=p.bs+f*4;}"
+        "        else{p.s+=(p.bs-p.s)*0.08;}"
+        "        p.x+=p.sx;p.y+=p.sy;"
+        "        if(p.x<0)p.x=cv.width;if(p.x>cv.width)p.x=0;"
+        "        if(p.y<0)p.y=cv.height;if(p.y>cv.height)p.y=0;"
+        "        var g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.s*2.5);"
+        "        g.addColorStop(0,'rgba('+p.h+','+p.a+')');"
+        "        g.addColorStop(0.5,'rgba('+p.h+','+(p.a*0.4)+')');"
+        "        g.addColorStop(1,'rgba('+p.h+',0)');"
+        "        ctx.beginPath();ctx.arc(p.x,p.y,p.s*2.5,0,Math.PI*2);"
+        "        ctx.fillStyle=g;ctx.fill();"
+        "        ctx.beginPath();ctx.arc(p.x,p.y,p.s*0.45,0,Math.PI*2);"
+        "        ctx.fillStyle='rgba('+p.h+','+p.a+')';ctx.fill();"
+        "        for(var j=i+1;j<pts.length;j++){"
+        "          var q=pts[j],dd=Math.hypot(p.x-q.x,p.y-q.y);"
+        "          if(dd<140){"
+        "            ctx.strokeStyle='rgba(0,255,170,'+(1-dd/140)*0.65+')';"
+        "            ctx.lineWidth=2.5;"
+        "            ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke();"
+        "          }"
         "        }"
         "      }"
+        "      pd.defaultView.requestAnimationFrame(draw);"
         "    }"
-        "    pd.defaultView.requestAnimationFrame(draw);"
+        "    pd.defaultView.addEventListener('resize',init);"
+        "    setTimeout(init,400);init();draw();"
+        "  } catch(e) {"
+        "    console.log('Particle background inactive in restricted iframe environment');"
         "  }"
-        "  pd.defaultView.addEventListener('resize',init);"
-        "  setTimeout(init,400);init();draw();"
         "})();"
     )
     components.html('<script>'+_js+'</script>', height=0)
 
 # --- App Logic & State ---
 if 'mode' not in st.session_state:
-    st.session_state.mode = 'Home'
+    st.session_state.mode = 'Portal'
 if 'registry' not in st.session_state:
     st.session_state.registry = []
 if 'use_real_model' not in st.session_state:
