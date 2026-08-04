@@ -138,18 +138,30 @@ local_css()
 # --- Model Loading ---
 @st.cache_resource(show_spinner="Loading Archaeological AI Models...")
 def load_models():
-    with open('configs/config.yaml', 'r') as f:
-        config = yaml.safe_load(f)
-    byol_ckpt     = os.path.join(config['model']['checkpoint_dir'], 'byol_final.pth')
-    analysis_ckpt = os.path.join(config['analysis_heads']['checkpoint_dir'], 'analysis_heads_final.pth')
-    analyzer = ArchaeologicalAnalyzer(
-        byol_ckpt=byol_ckpt,
-        analysis_ckpt=analysis_ckpt,
-        img_size=config['dataset']['image_size']
-    )
-    return analyzer, config
+    try:
+        with open('configs/config.yaml', 'r') as f:
+            config = yaml.safe_load(f)
+        byol_ckpt     = os.path.join(config['model']['checkpoint_dir'], 'byol_final.pth')
+        analysis_ckpt = os.path.join(config['analysis_heads']['checkpoint_dir'], 'analysis_heads_final.pth')
+        analyzer = ArchaeologicalAnalyzer(
+            byol_ckpt=byol_ckpt,
+            analysis_ckpt=analysis_ckpt,
+            img_size=config['dataset']['image_size']
+        )
+        return analyzer, config
+    except Exception as e:
+        import traceback
+        return None, {"_load_error": str(e), "_traceback": traceback.format_exc()}
 
-analyzer, config = load_models()
+_load_result = load_models()
+analyzer = _load_result[0]
+config    = _load_result[1]
+
+if analyzer is None:
+    st.error("⚠️ **Model failed to load.** See details below:")
+    st.code(config.get("_traceback", config.get("_load_error", "Unknown error")))
+    st.info("💡 The app's interactive map and demo features are still available below.")
+    config = {"dataset": {"image_size": 224}, "model": {}, "analysis_heads": {}}
 
 import streamlit.components.v1 as components
 
