@@ -2,11 +2,7 @@ import pandas as pd
 import yaml
 import os
 import matplotlib.pyplot as plt
-try:
-    import umap
-except ImportError:
-    umap = None
-from sklearn.manifold import TSNE
+import umap
 from sklearn.preprocessing import StandardScaler
 
 def visualize_embeddings():
@@ -24,18 +20,13 @@ def visualize_embeddings():
     # Scale
     features_scaled = StandardScaler().fit_transform(features)
 
-    if umap is not None:
-        print("Performing UMAP projection...")
-        reducer = umap.UMAP(
-            n_neighbors=config['visualization']['umap_n_neighbors'],
-            min_dist=config['visualization']['umap_min_dist'],
-            random_state=42
-        )
-        embedding = reducer.fit_transform(features_scaled)
-    else:
-        print("Performing t-SNE projection (UMAP fallback)...")
-        reducer = TSNE(n_components=2, random_state=42)
-        embedding = reducer.fit_transform(features_scaled)
+    print("Performing UMAP projection...")
+    reducer = umap.UMAP(
+        n_neighbors=config['visualization']['umap_n_neighbors'],
+        min_dist=config['visualization']['umap_min_dist'],
+        random_state=42
+    )
+    embedding = reducer.fit_transform(features_scaled)
 
     # Plot
     plt.figure(figsize=(10, 8))

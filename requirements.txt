@@ -5,8 +5,9 @@ pandas
 opencv-python-headless
 scikit-learn
 matplotlib
+umap-learn
 streamlit>=1.31.0
-altair
+altair<5
 geopandas
 folium
 streamlit-folium
