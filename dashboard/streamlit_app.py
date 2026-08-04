@@ -78,7 +78,8 @@ def local_css():
     }
     
     .stApp {
-        background: transparent;
+        background: linear-gradient(135deg, #05090F 0%, #0f172a 60%, #1e293b 100%) !important;
+        background-color: #05090F !important;
     }
     
     .glass-card {
@@ -360,13 +361,22 @@ if st.session_state.mode == 'Home':
         </style>
     """, unsafe_allow_html=True)
     
-    # Render the high-fidelity HTML UI/UX exactly as provided
-    with open("dashboard/landing.html", "r", encoding="utf-8") as f:
-        html_code = f.read()
-    
-    # Render borderless full-width component (height covers the whole document)
-    inject_particle_bg()
-    st.iframe(html_code, height=2800, scrolling=False)
+    # Render the high-fidelity HTML landing page
+    try:
+        with open("dashboard/landing.html", "r", encoding="utf-8") as f:
+            html_code = f.read()
+        st.markdown(html_code, unsafe_allow_html=True)
+    except Exception as e:
+        # Fallback if landing.html is missing
+        st.markdown("""
+        <div style='text-align:center; padding: 4rem 2rem; color: #f8fafc;'>
+            <h1 style='font-size:3rem; background: linear-gradient(90deg,#60a5fa,#c084fc); -webkit-background-clip:text; -webkit-text-fill-color:transparent;'>🏺 ARCHAEOLIS</h1>
+            <p style='font-size:1.2rem; color:#94a3b8; max-width:600px; margin:1rem auto;'>AI-Powered Archaeological Site Mapping System</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("🚀 Launch Portal", use_container_width=True):
+            st.session_state.mode = 'Portal'
+            st.rerun()
 
 elif st.session_state.mode == 'Portal':
     inject_particle_bg()
