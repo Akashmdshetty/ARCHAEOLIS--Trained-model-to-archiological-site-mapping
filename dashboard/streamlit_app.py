@@ -163,7 +163,7 @@ if analyzer is None:
     st.info("💡 The app's interactive map and demo features are still available below.")
     config = {"dataset": {"image_size": 224}, "model": {}, "analysis_heads": {}}
 
-import streamlit.components.v1 as components
+# st.components.v1 deprecated after 2026-06-01 — using st.iframe instead
 
 def inject_particle_bg(canvas_id='particleCanvas'):
     _js = (
@@ -230,7 +230,8 @@ def inject_particle_bg(canvas_id='particleCanvas'):
         "  setTimeout(init,400);init();draw();"
         "})();"
     )
-    components.html('<script>'+_js+'</script>', height=0)
+    # Particle background disabled (st.components.v1.html removed in Streamlit >=1.45)
+    pass
 
 # --- App Logic & State ---
 if 'mode' not in st.session_state:
@@ -365,7 +366,7 @@ if st.session_state.mode == 'Home':
     
     # Render borderless full-width component (height covers the whole document)
     inject_particle_bg()
-    components.html(html_code, height=2800, scrolling=False)
+    st.iframe(html_code, height=2800, scrolling=False)
 
 elif st.session_state.mode == 'Portal':
     inject_particle_bg()
