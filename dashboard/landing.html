@@ -190,11 +190,11 @@
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center pt-8">
                     <!-- Modified to hit Streamlit query param and use new button text -->
-                    <a href="?nav=app" target="_blank"
+                    <a href="?nav=app" target="_top" onclick="if(window.top){window.top.location.search='?nav=app';return false;}"
                         class="px-8 py-4 bg-neon-cyan text-deep-space font-bold uppercase tracking-widest hover:bg-white transition-all shadow-glow-cyan border border-neon-cyan duration-300 hover-glow-cyan">
                         [ START ANALYZE ]
                     </a>
-                    <a href="?nav=map" target="_blank"
+                    <a href="?nav=map" target="_top" onclick="if(window.top){window.top.location.search='?nav=map';return false;}"
                         class="px-8 py-4 border border-neon-cyan text-neon-cyan font-bold uppercase tracking-widest hover:bg-neon-cyan/10 transition-all duration-300 hover-glow-cyan">
                         [ View Map ]
                     </a>
@@ -352,7 +352,7 @@
                     <div
                         class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
                         <!-- Modified to hit Streamlit query param -->
-                        <a href="?nav=app" target="_blank"
+                        <a href="?nav=app" target="_top" onclick="if(window.top){window.top.location.search='?nav=app';return false;}"
                             class="px-6 py-3 border border-radar-green text-radar-green font-mono uppercase text-sm tracking-widest hover:bg-radar-green hover:text-deep-space transition-all duration-300 hover-glow-cyan">
                             [ START ANALYZE ]
                         </a>

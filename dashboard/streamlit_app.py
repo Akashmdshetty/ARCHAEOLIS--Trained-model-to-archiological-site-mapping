@@ -243,15 +243,32 @@ if 'use_real_model' not in st.session_state:
     st.session_state.use_real_model = True
 
 # Handle navigation from the HTML landing page
-nav = st.query_params.get("nav")
-if nav == "app":
+try:
+    nav_val = st.query_params.get("nav")
+except Exception:
+    nav_val = None
+
+if not nav_val:
+    try:
+        qp = st.experimental_get_query_params()
+        nav_val = qp.get("nav", [None])[0]
+    except Exception:
+        nav_val = None
+
+if nav_val == "app":
     st.session_state.mode = 'Portal'
     st.session_state.portal_tab_selection = "Manual Image Upload"
-    st.query_params.clear()
-elif nav == "map":
+    try:
+        st.query_params.clear()
+    except Exception:
+        pass
+elif nav_val == "map":
     st.session_state.mode = 'Portal'
     st.session_state.portal_tab_selection = "Interactive Map Discovery"
-    st.query_params.clear()
+    try:
+        st.query_params.clear()
+    except Exception:
+        pass
 
 # --- UI Header ---
 if st.session_state.mode != 'Home':
