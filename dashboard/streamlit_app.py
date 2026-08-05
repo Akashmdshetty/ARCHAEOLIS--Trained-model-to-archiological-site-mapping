@@ -396,20 +396,71 @@ if st.session_state.mode == 'Home':
             st.rerun()
 
 elif st.session_state.mode == 'Portal':
+    # Explicitly restore container padding, header, and text contrast in Portal mode
+    st.markdown("""
+        <style>
+            .block-container, [data-testid="stAppViewBlockContainer"] { 
+                padding: 1.5rem 1.5rem 5rem 1.5rem !important; 
+                max-width: 1200px !important; 
+            }
+            [data-testid="stHeader"] {
+                display: flex !important;
+                background: transparent !important;
+            }
+            [data-testid="stDecoration"] {
+                display: block !important;
+            }
+            body, .stApp, p, span, label, div, h1, h2, h3, h4, h5, h6, .stMarkdown, .stSelectbox, .stRadio, .stFileUploader {
+                color: #f8fafc !important;
+            }
+            .stSelectbox label, .stFileUploader label, .stRadio label {
+                color: #00E5FF !important;
+                font-weight: 700 !important;
+                font-size: 1.05rem !important;
+            }
+            .stSelectbox div[data-baseweb="select"] {
+                background-color: #0f172a !important;
+                color: #00E5FF !important;
+                border: 1px solid rgba(0, 229, 255, 0.4) !important;
+                border-radius: 10px !important;
+            }
+            .stSelectbox div[data-baseweb="select"] * {
+                color: #00E5FF !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+    
     inject_particle_bg()
     
+    # ── Top Navigation Bar on Main Page ──────────────────────────
+    nav_col1, nav_col2, nav_col3 = st.columns([1.5, 4, 2])
+    with nav_col1:
+        if st.button("← Back to Home", key="top_back_home", use_container_width=True):
+            st.session_state.mode = 'Home'
+            st.rerun()
+    with nav_col2:
+        st.markdown("""
+            <div style="font-family:'Orbitron',sans-serif; font-size:1.4rem; font-weight:700; color:#00E5FF; padding-top:4px;">
+                🏺 ARCHAEOLIS <span style="font-size:0.9rem; color:#00FFAA; font-weight:400;">// AI SITE SURVEY & ANALYSIS PORTAL</span>
+            </div>
+        """, unsafe_allow_html=True)
+    with nav_col3:
+        st.session_state.use_real_model = st.checkbox("Use AI Model (vs Synth)", value=True, key="top_model_chk")
+
+    st.markdown("---")
+
+    # Sidebar Navigation & Info
     st.sidebar.markdown(f"""
         <div class="glass-card" style="padding: 1rem; border-radius: 10px;">
-            <p style="margin:0; font-family:'Orbitron'; font-size:0.9rem;">PORTAL NAVIGATION</p>
+            <p style="margin:0; font-family:'Orbitron'; font-size:0.9rem; color:#00E5FF;">PORTAL NAVIGATION</p>
         </div>
     """, unsafe_allow_html=True)
     
-    if st.sidebar.button("← Back to Home"):
+    if st.sidebar.button("← Back to Home", key="sidebar_back_home"):
         st.session_state.mode = 'Home'
         st.rerun()
         
     st.sidebar.markdown("---")
-    st.session_state.use_real_model = st.sidebar.checkbox("Use AI Model (vs Synth)", value=True)
     
     if st.session_state.registry:
         st.sidebar.subheader("Recent Discoveries")
@@ -425,16 +476,24 @@ elif st.session_state.mode == 'Portal':
     except ValueError:
         default_index = 1
         
-    portal_tab = st.selectbox("Analysis Source", tabs, index=default_index)
+    portal_tab = st.radio("Select Analysis Source", tabs, index=default_index, horizontal=True)
     st.session_state.portal_tab_selection = portal_tab
     
     if portal_tab == "Manual Image Upload":
         st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-        uploaded_file = st.file_uploader("Drop satellite/drone image here", type=['jpg', 'jpeg', 'png', 'tif'])
+        uploaded_file = st.file_uploader("Drop satellite / drone image here", type=['jpg', 'jpeg', 'png', 'tif'])
+        
+        if not uploaded_file:
+            st.info("💡 **No satellite image file on hand?** Drop an image above or run instant analysis on a sample satellite sector:")
+            if st.button("⚡ Run Instant Sample Satellite Image Analysis", key="btn_sample_run", use_container_width=True):
+                st.session_state.use_sample_demo = True
+        
         st.markdown('</div>', unsafe_allow_html=True)
         
-        if uploaded_file:
-            res = run_analysis_pipeline(uploaded_file)
+        image_to_process = uploaded_file if uploaded_file else ("test_output.png" if st.session_state.get('use_sample_demo') else None)
+        
+        if image_to_process:
+            res = run_analysis_pipeline(image_to_process)
             
             c1, c2 = st.columns([1, 1])
             with c1:
