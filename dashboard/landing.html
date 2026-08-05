@@ -190,11 +190,11 @@
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center pt-8">
                     <!-- Modified to hit Streamlit query param and use new button text -->
-                    <a href="?nav=app" target="_self"
+                    <a href="?nav=app" onclick="navTo('app'); return false;"
                         class="px-8 py-4 bg-neon-cyan text-deep-space font-bold uppercase tracking-widest hover:bg-white transition-all shadow-glow-cyan border border-neon-cyan duration-300 hover-glow-cyan">
                         [ START ANALYZE ]
                     </a>
-                    <a href="?nav=map" target="_self"
+                    <a href="?nav=map" onclick="navTo('map'); return false;"
                         class="px-8 py-4 border border-neon-cyan text-neon-cyan font-bold uppercase tracking-widest hover:bg-neon-cyan/10 transition-all duration-300 hover-glow-cyan">
                         [ View Map ]
                     </a>
@@ -352,7 +352,7 @@
                     <div
                         class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
                         <!-- Modified to hit Streamlit query param -->
-                        <a href="?nav=app" target="_self"
+                        <a href="?nav=app" onclick="navTo('app'); return false;"
                             class="px-6 py-3 border border-radar-green text-radar-green font-mono uppercase text-sm tracking-widest hover:bg-radar-green hover:text-deep-space transition-all duration-300 hover-glow-cyan">
                             [ START ANALYZE ]
                         </a>
@@ -408,8 +408,22 @@
             </div>
         </div>
     </footer>
-    <!-- BEGIN: Mouse Event Forwarding for Background Particles -->
+    <!-- BEGIN: Navigation & Mouse Event Forwarding -->
     <script>
+        function navTo(page) {
+            try {
+                var topUrl = window.top.location.href.split('?')[0].replace(/\/~\/?$/, '');
+                window.top.location.href = topUrl + '?nav=' + page;
+            } catch (e) {
+                try {
+                    var curUrl = window.location.href.split('?')[0].replace(/\/~\/?$/, '');
+                    window.location.href = curUrl + '?nav=' + page;
+                } catch (e2) {
+                    window.location.search = '?nav=' + page;
+                }
+            }
+        }
+
         // Forward mouse movements to the parent Streamlit window so background particles can react
         window.addEventListener('mousemove', (e) => {
             try {
@@ -420,14 +434,13 @@
                     y: e.clientY + rect.top
                 }, '*');
             } catch (err) {
-                // Fallback if cross-origin or no frameElement
                 window.parent.postMessage({
                     type: 'mousemove',
                     x: e.clientX,
                     y: e.clientY
                 }, '*');
             }
-        }, true); // Use capture to catch events before they are stopped
+        }, true);
     </script>
 </body>
 </html>ml>

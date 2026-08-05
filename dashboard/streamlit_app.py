@@ -246,17 +246,9 @@ if not nav_val:
 if nav_val == "app":
     st.session_state.mode = 'Portal'
     st.session_state.portal_tab_selection = "Manual Image Upload"
-    try:
-        st.query_params.clear()
-    except Exception:
-        pass
 elif nav_val == "map":
     st.session_state.mode = 'Portal'
     st.session_state.portal_tab_selection = "Interactive Map Discovery"
-    try:
-        st.query_params.clear()
-    except Exception:
-        pass
 
 # --- UI Header ---
 if st.session_state.mode != 'Home':
