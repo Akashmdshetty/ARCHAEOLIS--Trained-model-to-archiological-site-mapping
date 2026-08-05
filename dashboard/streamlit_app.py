@@ -2,7 +2,6 @@ import streamlit as st
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 
-import torch
 import yaml
 import os
 from PIL import Image
@@ -16,7 +15,6 @@ import urllib.request
 import urllib.parse
 import json
 
-from utils.inference import ArchaeologicalAnalyzer
 from utils.visualization_utils import (
     overlay_mask, draw_boxes, overlay_heatmap,
     get_placeholder_analytics
@@ -519,13 +517,11 @@ elif st.session_state.mode == 'Portal':
         uploaded_file = st.file_uploader("Drop satellite / drone image here", type=['jpg', 'jpeg', 'png', 'tif'])
         
         if not uploaded_file:
-            st.info("💡 **No satellite image file on hand?** Drop an image above or run instant analysis on a sample satellite sector:")
-            if st.button("⚡ Run Instant Sample Satellite Image Analysis", key="btn_sample_run", use_container_width=True):
-                st.session_state.use_sample_demo = True
+            st.info("💡 **Showing Sample Satellite Sector Analysis Below.** Drop your own satellite/drone image above to analyze custom imagery!")
         
         st.markdown('</div>', unsafe_allow_html=True)
         
-        image_to_process = uploaded_file if uploaded_file else ("test_output.png" if st.session_state.get('use_sample_demo') else None)
+        image_to_process = uploaded_file if uploaded_file else "test_output.png"
         
         if image_to_process:
             res = run_analysis_pipeline(image_to_process)
