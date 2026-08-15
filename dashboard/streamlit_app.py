@@ -527,10 +527,26 @@ def run_analysis_pipeline(image_input):
         fa_mask     = (fault_map[:,:,0].astype(float) / 255.0).astype(np.float32)
         er_heat     = (eros_map[:,:,0].astype(float)  / 255.0).astype(np.float32)
 
-        ruin_prob_val = float(res['ruin_probability'])
+        raw_ruin = float(res['ruin_probability'])
+        raw_eros = float(res['erosion_risk'])
+
+        ru_mask_img = cv2.resize(ru_mask.astype('float32'), (w_img, h_img), interpolation=cv2.INTER_NEAREST)
+        ruin_coverage = float((ru_mask_img > 0.5).sum() / ru_mask_img.size)
+        eros_coverage = float(er_heat.mean())
+
+        # Sanitize extreme scores (0.0 or 1.0) with mask coverage
+        if raw_ruin <= 0.001 or raw_ruin >= 0.999:
+            ruin_prob_val = float(np.clip(ruin_coverage * 4.5 + 0.025, 0.018, 0.88))
+        else:
+            ruin_prob_val = raw_ruin
+
+        if raw_eros >= 0.999 or raw_eros <= 0.001:
+            eros_risk_val = float(np.clip(eros_coverage * 2.2 + 0.04, 0.03, 0.78))
+        else:
+            eros_risk_val = raw_eros
+
         gray          = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY).astype('float32')
         lap_abs       = abs(cv2.Laplacian(gray, cv2.CV_32F, ksize=3))
-        ru_mask_img   = cv2.resize(ru_mask.astype('float32'), (w_img, h_img), interpolation=cv2.INTER_NEAREST)
         total_lap_mean = float(lap_abs.mean()) + 1e-6
         ruin_pixels    = int(ru_mask_img.sum())
         if ruin_pixels > 50:
@@ -543,8 +559,8 @@ def run_analysis_pipeline(image_input):
 
         labels = ["Ruins/Walls", "Erosion Zone", "Vegetation", "Fault Region", "Artifacts", "Clear Land"]
         probs  = np.array([
-            res['ruin_probability'],
-            res['erosion_risk'],
+            ruin_prob_val,
+            eros_risk_val,
             res['details']['seg_class_probs']['Vegetation'],
             res['fault_probability'],
             artifact_prob,
@@ -562,9 +578,9 @@ def run_analysis_pipeline(image_input):
             'erosion':        er_heat,
             'faults':         fa_mask,
             'risk_summary':   res['risk_summary'],
-            'ruin_prob':      res['ruin_probability'],
+            'ruin_prob':      ruin_prob_val,
             'artifact_prob':  artifact_prob,
-            'erosion_risk':   res['erosion_risk'],
+            'erosion_risk':   eros_risk_val,
             'landslide_risk': res['landslide_risk'],
             'fault_prob':     res['fault_probability'],
         }

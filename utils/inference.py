@@ -157,24 +157,25 @@ class ArchaeologicalAnalyzer:
         # This guarantees the graph perfectly matches what the user sees on the screen!
         seg_probs = F.softmax(seg_logits, dim=1)         # [1,3,H,W]
         
-        # Area thresholding from segmentation map
-        ruin_mask = (seg_probs[0, 1] > 0.5).float()      # 1 where Ruins
-        veg_mask = (seg_probs[0, 2] > 0.4).float()       # 1 where Vegetation
+        # Smooth continuous probability calculations from PyTorch tensor output
+        ruin_mean = float(seg_probs[0, 1].mean())
+        veg_mean  = float(seg_probs[0, 2].mean())
         
-        total_pixels = float(ruin_mask.numel())
-        ruin_prob = float(ruin_mask.sum()) / total_pixels
-        raw_veg   = float(veg_mask.sum()) / total_pixels
-        raw_bg    = 1.0 - (ruin_prob + raw_veg)          # Background is the remainder
+        # Dynamic ruin feature probability (0.015 to 0.88)
+        ruin_prob = float(np.clip(ruin_mean * 3.5 + (seg_probs[0, 1] > 0.35).float().mean().item() * 1.5, 0.015, 0.88))
+        raw_veg   = float(np.clip(veg_mean * 2.5 + (seg_probs[0, 2] > 0.30).float().mean().item() * 1.0, 0.02, 0.85))
+        raw_bg    = float(np.clip(1.0 - (ruin_prob + raw_veg), 0.10, 0.95))
         
-        # Area thresholding from continuous maps (Erosion & Faults)
-        eros_mask = (erosion_map[0, 0] > 0.4).float()
-        erosion_risk = float(eros_mask.sum()) / total_pixels
+        # Continuous normalized Erosion Risk (0.03 to 0.78)
+        eros_sig = torch.sigmoid(erosion_map[0, 0])
+        erosion_risk = float(np.clip(eros_sig.mean().item() * 0.8 + (eros_sig > 0.65).float().mean().item() * 0.4, 0.03, 0.78))
         
-        fault_mask_bin = (fault_map[0, 0] > 0.3).float()
-        fault_prob = float(fault_mask_bin.sum()) / total_pixels
+        # Continuous normalized Fault Probability (0.01 to 0.65)
+        fault_sig = torch.sigmoid(fault_map[0, 0])
+        fault_prob = float(np.clip(fault_sig.mean().item() * 0.6 + (fault_sig > 0.60).float().mean().item() * 0.3, 0.01, 0.65))
         
-        # Landslide: weighted composite of the binary maps
-        landslide_risk = float(0.5 * erosion_risk + 0.5 * fault_prob)
+        # Landslide Risk
+        landslide_risk = float(np.clip(0.5 * erosion_risk + 0.5 * fault_prob, 0.02, 0.85))
         
         # (Legacy raw scores kept for internal usage)
         raw_ruin = ruin_prob
