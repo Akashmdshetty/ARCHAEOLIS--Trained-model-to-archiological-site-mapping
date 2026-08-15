@@ -17,7 +17,7 @@ import json
 
 from utils.visualization_utils import (
     overlay_mask, draw_boxes, overlay_heatmap,
-    get_placeholder_analytics
+    get_placeholder_analytics, create_satellite_scanner_composite
 )
 from utils.las_parser import get_borehole_data
 
@@ -895,18 +895,26 @@ elif st.session_state.mode == 'Portal':
                         else:
                             composite = np.clip(composite, 0, 255).astype(np.uint8)
 
-                    # Binarize masks with strict thresholds
-                    v_bin = (res['veg'] > 128).astype(np.uint8) if res['veg'].dtype != np.uint8 else (res['veg'] > 128).astype(np.uint8)
-                    r_bin = (res['ruins'] > 128).astype(np.uint8) if res['ruins'].dtype != np.uint8 else (res['ruins'] > 128).astype(np.uint8)
-                    f_bin = (res['faults'] > 0.35).astype(np.uint8)
-
-                    if show_v and v_bin.any(): composite = overlay_mask(composite, v_bin, (0, 230, 118), 0.35)
-                    if show_r and r_bin.any(): composite = overlay_mask(composite, r_bin, (255, 52, 100), 0.50)
-                    if show_f and f_bin.any(): composite = overlay_mask(composite, f_bin, (175, 82, 222), 0.45)
-                    if show_e: composite = overlay_heatmap(composite, cv2.resize(res['erosion'], (composite.shape[1], composite.shape[0])))
-                    if show_a: composite = draw_boxes(composite, res['artifacts'])
+                    composite = create_satellite_scanner_composite(
+                        base_rgb=composite,
+                        ruins_mask=res['ruins'],
+                        veg_mask=res['veg'],
+                        erosion_map=res['erosion'],
+                        faults_mask=res['faults'],
+                        artifacts=res['artifacts'],
+                        place_name="Uploaded Image Sector",
+                        lat=st.session_state.get('map_center', [55.4682, 15.4771])[0],
+                        lon=st.session_state.get('map_center', [55.4682, 15.4771])[1],
+                        radius_km=1.0,
+                        show_ruins=show_r,
+                        show_veg=show_v,
+                        show_erosion=show_e,
+                        show_faults=show_f,
+                        show_artifacts=show_a,
+                        show_hud=True
+                    )
                     
-                    st.image(composite, caption="Layered Archeological Satellite Analysis", use_container_width=True)
+                    st.image(composite, caption="Multi-Layered Cybernetic Satellite Scan Overlay", use_container_width=True)
                 
             with c2:
                 with st.container(border=True):
@@ -1116,24 +1124,39 @@ elif st.session_state.mode == 'Portal':
                         if comp.max() <= 1.0:
                             comp = (comp * 255).astype(np.uint8)
                         else:
-                            composite = np.clip(comp, 0, 255).astype(np.uint8)
+                            comp = np.clip(comp, 0, 255).astype(np.uint8)
 
-                    # Binarize masks with strict thresholds
-                    v_bin = (res['veg'] > 128).astype(np.uint8) if res['veg'].dtype != np.uint8 else (res['veg'] > 128).astype(np.uint8)
-                    r_bin = (res['ruins'] > 128).astype(np.uint8) if res['ruins'].dtype != np.uint8 else (res['ruins'] > 128).astype(np.uint8)
-                    f_bin = (res['faults'] > 0.35).astype(np.uint8)
-
-                    if v_bin.any(): comp = overlay_mask(comp, v_bin, (0, 230, 118), 0.35)
-                    if r_bin.any(): comp = overlay_mask(comp, r_bin, (255, 52, 100), 0.50)
-                    if f_bin.any(): comp = overlay_mask(comp, f_bin, (175, 82, 222), 0.45)
-                    comp = draw_boxes(comp, res['artifacts'])
+                    # Generate multi-layered high-tech satellite scanner visual with HUD
+                    comp = create_satellite_scanner_composite(
+                        base_rgb=comp,
+                        ruins_mask=res['ruins'],
+                        veg_mask=res['veg'],
+                        erosion_map=res['erosion'],
+                        faults_mask=res['faults'],
+                        artifacts=res['artifacts'],
+                        place_name=st.session_state.map_place_name,
+                        lat=active_lat,
+                        lon=active_lon,
+                        radius_km=st.session_state.scan_radius_km,
+                        show_ruins=True,
+                        show_veg=True,
+                        show_erosion=True,
+                        show_faults=True,
+                        show_artifacts=True,
+                        show_hud=True
+                    )
                     
-                    st.image(comp, caption=f"Multi-hazard Layered Analysis for {st.session_state.scan_radius_km}km Zone around {st.session_state.map_place_name}", use_container_width=True)
+                    st.image(comp, caption=f"Multi-Layered Satellite Scanner Composite: {st.session_state.map_place_name} ({active_lat:.4f}°N, {active_lon:.4f}°E)", use_container_width=True)
                 
             with colB:
                 with st.container(border=True):
                     # Compute pixel-accurate area metrics
+                    r_bin = (res['ruins'] > 128).astype(np.uint8) if res['ruins'].dtype != np.uint8 else (res['ruins'] > 0).astype(np.uint8)
+                    f_bin = (res['faults'] > 0.35).astype(np.uint8) if res['faults'].dtype != np.uint8 else (res['faults'] > 0).astype(np.uint8)
                     tot_pix = comp.shape[0] * comp.shape[1]
+                    ruin_pct = (np.count_nonzero(r_bin) / float(tot_pix)) * 100.0
+                    fault_pct = (np.count_nonzero(f_bin) / float(tot_pix)) * 100.0
+                    integrity = max(15.0, min(99.0, 100.0 - (ruin_pct * 1.4 + fault_pct * 1.8)))
                     ruin_pct = (np.count_nonzero(r_bin) / float(tot_pix)) * 100.0
                     fault_pct = (np.count_nonzero(f_bin) / float(tot_pix)) * 100.0
                     integrity = max(15.0, min(99.0, 100.0 - (ruin_pct * 1.4 + fault_pct * 1.8)))

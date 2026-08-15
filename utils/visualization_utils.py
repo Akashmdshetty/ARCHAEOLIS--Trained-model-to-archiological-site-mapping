@@ -52,6 +52,106 @@ def overlay_heatmap(image, heatmap, alpha=0.6):
     result[mask] = cv2.addWeighted(image[mask], 1-alpha, heatmap_color[mask], alpha, 0)
     return result
 
+def create_satellite_scanner_composite(base_rgb, ruins_mask, veg_mask, erosion_map, faults_mask, artifacts, place_name, lat, lon, radius_km,
+                                       show_ruins=True, show_veg=True, show_erosion=True, show_faults=True, show_artifacts=True, show_hud=True):
+    """
+    Creates a multi-layered high-tech satellite scan composite image.
+    Layer 1: Real satellite base image (RGB)
+    Layer 2: Multi-spectral Vegetation (NDVI Emerald Green)
+    Layer 3: Soil Erosion LiDAR / Thermal Heatmap (Yellow/Orange gradient)
+    Layer 4: Structural Ruin Contours & Foundations (Neon Red/Magenta)
+    Layer 5: Geological Fault Fractures (Purple/Violet)
+    Layer 6: Artifact Bounding Boxes (Neon Blue)
+    Layer 7: Cybernetic Scanner HUD (GPS Coords, Target Reticle, Scale Brackets)
+    """
+    h, w = base_rgb.shape[:2]
+    composite = base_rgb.copy()
+    
+    # 1. Vegetation Layer (Emerald Green)
+    if show_veg and veg_mask is not None and np.any(veg_mask > 0):
+        veg_bin = (veg_mask > 128).astype(np.uint8) if veg_mask.dtype != np.uint8 else (veg_mask > 0).astype(np.uint8)
+        if veg_bin.any():
+            veg_layer = composite.copy()
+            veg_layer[veg_bin > 0] = [0, 230, 118]
+            composite = cv2.addWeighted(veg_layer, 0.35, composite, 0.65, 0)
+
+    # 2. Erosion Risk Thermal Heatmap Layer
+    if show_erosion and erosion_map is not None:
+        er_norm = cv2.resize(erosion_map.astype(np.float32), (w, h))
+        er_norm = np.clip(er_norm, 0.0, 1.0)
+        er_color = np.zeros((h, w, 3), dtype=np.uint8)
+        er_color[:, :, 0] = np.uint8(er_norm * 255)         # Red
+        er_color[:, :, 1] = np.uint8(er_norm * 180)         # Green
+        er_color[:, :, 2] = np.uint8((1.0 - er_norm) * 40)  # Blue
+        
+        mask_er = er_norm > 0.2
+        if mask_er.any():
+            er_blend = composite.copy()
+            er_blend[mask_er] = cv2.addWeighted(er_color[mask_er], 0.40, composite[mask_er], 0.60, 0)
+            composite = er_blend
+
+    # 3. Structural Ruin Contour & Foundation Layer (Neon Red with White edge outline)
+    if show_ruins and ruins_mask is not None and np.any(ruins_mask > 0):
+        ruin_bin = (ruins_mask > 128).astype(np.uint8) if ruins_mask.dtype != np.uint8 else (ruins_mask > 0).astype(np.uint8)
+        if ruin_bin.any():
+            ruin_layer = composite.copy()
+            ruin_layer[ruin_bin > 0] = [255, 45, 85]
+            composite = cv2.addWeighted(ruin_layer, 0.50, composite, 0.50, 0)
+            
+            contours, _ = cv2.findContours(ruin_bin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cv2.drawContours(composite, contours, -1, (255, 255, 255), 2)
+            cv2.drawContours(composite, contours, -1, (255, 45, 85), 1)
+
+    # 4. Geological Fault Lines (Purple/Violet)
+    if show_faults and faults_mask is not None and np.any(faults_mask > 0):
+        f_bin = (faults_mask > 0.35).astype(np.uint8) if faults_mask.dtype != np.uint8 else (faults_mask > 0).astype(np.uint8)
+        if f_bin.any():
+            fault_layer = composite.copy()
+            fault_layer[f_bin > 0] = [175, 82, 222]
+            composite = cv2.addWeighted(fault_layer, 0.55, composite, 0.45, 0)
+
+    # 5. Artifact Signal Detection Boxes
+    if show_artifacts and artifacts:
+        for box in artifacts:
+            conf, x, y, bw, bh = box
+            if conf > 0.4:
+                x1 = int((x - bw/2) * w)
+                y1 = int((y - bh/2) * h)
+                x2 = int((x + bw/2) * w)
+                y2 = int((y + bh/2) * h)
+                cv2.rectangle(composite, (x1, y1), (x2, y2), (0, 229, 255), 2)
+                cv2.putText(composite, f"ART-SIG {conf*100:.0f}%", (x1, max(y1-5, 15)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 229, 255), 1)
+
+    # 6. High-Tech Satellite Scanner HUD Overlay
+    if show_hud:
+        cx, cy = w // 2, h // 2
+        cv2.drawMarker(composite, (cx, cy), (0, 255, 255), cv2.MARKER_CROSS, 40, 1)
+        cv2.circle(composite, (cx, cy), 60, (0, 255, 255), 1)
+        cv2.circle(composite, (cx, cy), 180, (0, 229, 255), 1)
+
+        corner_len = 35
+        # Top-Left
+        cv2.line(composite, (20, 20), (20 + corner_len, 20), (0, 229, 255), 2)
+        cv2.line(composite, (20, 20), (20, 20 + corner_len), (0, 229, 255), 2)
+        # Top-Right
+        cv2.line(composite, (w - 20, 20), (w - 20 - corner_len, 20), (0, 229, 255), 2)
+        cv2.line(composite, (w - 20, 20), (w - 20, 20 + corner_len), (0, 229, 255), 2)
+        # Bottom-Left
+        cv2.line(composite, (20, h - 20), (20 + corner_len, h - 20), (0, 229, 255), 2)
+        cv2.line(composite, (20, h - 20), (20, h - 20 - corner_len), (0, 229, 255), 2)
+        # Bottom-Right
+        cv2.line(composite, (w - 20, h - 20), (w - 20 - corner_len, h - 20), (0, 229, 255), 2)
+        cv2.line(composite, (w - 20, h - 20), (w - 20, h - 20 - corner_len), (0, 229, 255), 2)
+
+        hud_bar = np.zeros((45, w, 3), dtype=np.uint8)
+        composite[:45] = cv2.addWeighted(composite[:45], 0.35, hud_bar, 0.65, 0)
+        
+        info_text = f"SATELLITE SCANNER // {place_name} ({lat:.4f}N, {lon:.4f}E) | ZONE: {radius_km}KM"
+        cv2.putText(composite, info_text, (25, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 255), 1)
+
+    return composite
+
 def get_placeholder_analytics(img_size=(224, 224), seed=42):
     """
     Generates deterministic dummy data based on a seed for UI demonstration.
