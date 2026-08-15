@@ -72,40 +72,54 @@ def latlon_to_tile(lat, lon, zoom):
 
 def fetch_satellite_image(lat, lon, radius_km=1.0):
     """
-    Fetches real high-resolution Esri World Imagery satellite photo by stitching 3x3 tiles at zoom 16.
-    Matches the exact satellite view shown on the interactive map!
+    Fetches real high-resolution Esri World Imagery satellite photo for target lat/lon coordinates.
+    Uses single REST export first, fallback to tile stitching.
     """
     try:
-        zoom = 16
-        if float(radius_km) > 5.0:
-            zoom = 14
-        elif float(radius_km) > 2.0:
-            zoom = 15
-            
-        cx, cy = latlon_to_tile(float(lat), float(lon), zoom)
+        delta_lat = float(radius_km) / 111.0
+        delta_lon = float(radius_km) / (111.0 * max(0.1, math.cos(math.radians(float(lat)))))
         
-        # Stitch 3x3 tile grid (each 256x256 -> 768x768 canvas)
+        min_lat = float(lat) - delta_lat
+        max_lat = float(lat) + delta_lat
+        min_lon = float(lon) - delta_lon
+        max_lon = float(lon) + delta_lon
+        
+        # Method 1: Direct Esri World Imagery MapServer Export (Single HTTP GET request)
+        url_export = (
+            f"https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/export?"
+            f"bbox={min_lon:.6f},{min_lat:.6f},{max_lon:.6f},{max_lat:.6f}"
+            f"&bboxSR=4326&imageSR=4326&size=512,512&format=jpg&f=image"
+        )
+        req_exp = urllib.request.Request(url_export, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ARCHAEOLIS/2.0'})
+        try:
+            with urllib.request.urlopen(req_exp, timeout=5) as resp_exp:
+                img_data = resp_exp.read()
+                if len(img_data) > 2500:
+                    img = Image.open(io.BytesIO(img_data)).convert('RGB')
+                    if img.size[0] >= 100 and img.size[1] >= 100:
+                        return img
+        except Exception:
+            pass
+
+        # Method 2: Tile grid stitching fallback (Zoom 15)
+        zoom = 15
+        cx, cy = latlon_to_tile(float(lat), float(lon), zoom)
         canvas = Image.new('RGB', (768, 768))
         tiles_fetched = 0
-        
         for dx in range(-1, 2):
             for dy in range(-1, 2):
-                tx = cx + dx
-                ty = cy + dy
-                url = f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{zoom}/{ty}/{tx}"
+                url_tile = f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{zoom}/{cy+dy}/{cx+dx}"
                 try:
-                    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ARCHAEOLIS/2.0'})
-                    with urllib.request.urlopen(req, timeout=4) as resp:
-                        tile_img = Image.open(io.BytesIO(resp.read())).convert('RGB')
+                    req_t = urllib.request.Request(url_tile, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ARCHAEOLIS/2.0'})
+                    with urllib.request.urlopen(req_t, timeout=3) as resp_t:
+                        tile_img = Image.open(io.BytesIO(resp_t.read())).convert('RGB')
                         canvas.paste(tile_img, ((dx + 1) * 256, (dy + 1) * 256))
                         tiles_fetched += 1
                 except Exception:
                     pass
                     
-        if tiles_fetched >= 4:
-            # Crop center 512x512
-            center_crop = canvas.crop((128, 128, 640, 640))
-            return center_crop
+        if tiles_fetched >= 1:
+            return canvas.crop((128, 128, 640, 640))
     except Exception:
         pass
     return None
@@ -1156,13 +1170,14 @@ elif st.session_state.mode == 'Portal':
                         )
                         st.plotly_chart(f_pie, use_container_width=True)
 
+            pred_idx = int(np.argmax(res['probs']))
             site_entry = {
                 'place': st.session_state.map_place_name,
                 'lat': round(active_lat, 4), 
                 'lon': round(active_lon, 4),
                 'radius': f"{st.session_state.scan_radius_km} km",
                 'type': res['labels'][pred_idx],
-                'integrity': "89.2%" if res['probs'][pred_idx] > 0.5 else "Moderate",
+                'integrity': f"{integrity:.1f}%",
                 'timestamp': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")
             }
             if not any(s['lat'] == active_lat and s['lon'] == active_lon for s in st.session_state.registry):
