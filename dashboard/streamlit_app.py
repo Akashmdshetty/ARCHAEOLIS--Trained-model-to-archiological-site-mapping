@@ -63,30 +63,49 @@ def lookup_place_coordinates(query):
         pass
     return None, None, None
 
+def latlon_to_tile(lat, lon, zoom):
+    lat_rad = math.radians(lat)
+    n = 2.0 ** zoom
+    xtile = int((lon + 180.0) / 360.0 * n)
+    ytile = int((1.0 - math.log(math.tan(lat_rad) + (1.0 / math.cos(lat_rad))) / math.pi) / 2.0 * n)
+    return xtile, ytile
+
 def fetch_satellite_image(lat, lon, radius_km=1.0):
     """
-    Fetches real high-resolution Esri World Imagery satellite photo for target lat/lon coordinates.
+    Fetches real high-resolution Esri World Imagery satellite photo by stitching 3x3 tiles at zoom 16.
+    Matches the exact satellite view shown on the interactive map!
     """
     try:
-        delta_lat = float(radius_km) / 111.0
-        delta_lon = float(radius_km) / (111.0 * max(0.1, math.cos(math.radians(float(lat)))))
+        zoom = 16
+        if float(radius_km) > 5.0:
+            zoom = 14
+        elif float(radius_km) > 2.0:
+            zoom = 15
+            
+        cx, cy = latlon_to_tile(float(lat), float(lon), zoom)
         
-        min_lat = float(lat) - delta_lat
-        max_lat = float(lat) + delta_lat
-        min_lon = float(lon) - delta_lon
-        max_lon = float(lon) + delta_lon
+        # Stitch 3x3 tile grid (each 256x256 -> 768x768 canvas)
+        canvas = Image.new('RGB', (768, 768))
+        tiles_fetched = 0
         
-        url = (
-            f"https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/export?"
-            f"bbox={min_lon:.6f},{min_lat:.6f},{max_lon:.6f},{max_lat:.6f}"
-            f"&bboxSR=4326&imageSR=4326&size=512,512&format=jpg&f=image"
-        )
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ARCHAEOLIS/2.0'})
-        with urllib.request.urlopen(req, timeout=6) as resp:
-            img_data = resp.read()
-            img = Image.open(io.BytesIO(img_data)).convert('RGB')
-            if img.size[0] >= 100 and img.size[1] >= 100:
-                return img
+        for dx in range(-1, 2):
+            for dy in range(-1, 2):
+                tx = cx + dx
+                ty = cy + dy
+                url = f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{zoom}/{ty}/{tx}"
+                try:
+                    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ARCHAEOLIS/2.0'})
+                    with urllib.request.urlopen(req, timeout=4) as resp:
+                        tile_img = Image.open(io.BytesIO(resp.read())).convert('RGB')
+                        canvas.paste(tile_img, ((dx + 1) * 256, (dy + 1) * 256))
+                        tiles_fetched += 1
+                except Exception:
+                    pass
+                    
+        if tiles_fetched >= 4:
+            # Crop center 512x512
+            center_crop = canvas.crop((128, 128, 640, 640))
+            return center_crop
     except Exception:
         pass
     return None
