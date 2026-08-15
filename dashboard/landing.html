@@ -376,13 +376,13 @@
 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center pt-8">
 
-                    <a href="?nav=app" target="_top" onclick="navTo('app'); return false;" class="px-8 py-4 bg-neon-cyan text-deep-space font-bold uppercase tracking-widest hover:bg-white transition-all shadow-glow-cyan border border-neon-cyan duration-300 hover-glow-cyan">
+                    <a href="/?nav=app" target="_top" class="px-8 py-4 bg-neon-cyan text-deep-space font-bold uppercase tracking-widest hover:bg-white transition-all shadow-glow-cyan border border-neon-cyan duration-300 hover-glow-cyan">
 
                         [ START ANALYZE ]
 
                     </a>
 
-                    <a href="?nav=map" target="_top" onclick="navTo('map'); return false;" class="px-8 py-4 border border-neon-cyan text-neon-cyan font-bold uppercase tracking-widest hover:bg-neon-cyan/10 transition-all duration-300 hover-glow-cyan">
+                    <a href="/?nav=map" target="_top" class="px-8 py-4 border border-neon-cyan text-neon-cyan font-bold uppercase tracking-widest hover:bg-neon-cyan/10 transition-all duration-300 hover-glow-cyan">
 
                         [ View Map ]
 
@@ -807,12 +807,12 @@
         function navTo(page) {
             var dest = (page === 'map') ? 'map' : 'app';
             try {
-                window.open('?nav=' + dest, '_top');
+                window.open('/?nav=' + dest, '_top');
             } catch(e) {
                 try {
-                    window.open('?nav=' + dest, '_parent');
+                    window.open('/?nav=' + dest, '_parent');
                 } catch(err) {
-                    window.location.href = '?nav=' + dest;
+                    window.location.href = '/?nav=' + dest;
                 }
             }
         }
