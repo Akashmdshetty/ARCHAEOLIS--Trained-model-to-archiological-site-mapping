@@ -376,13 +376,13 @@
 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center pt-8">
 
-                    <a href="/?nav=app" target="_top" onclick="navTo('app'); return false;" class="px-8 py-4 bg-neon-cyan text-deep-space font-bold uppercase tracking-widest hover:bg-white transition-all shadow-glow-cyan border border-neon-cyan duration-300 hover-glow-cyan">
+                    <a href="?nav=app" onclick="navTo('app');" class="px-8 py-4 bg-neon-cyan text-deep-space font-bold uppercase tracking-widest hover:bg-white transition-all shadow-glow-cyan border border-neon-cyan duration-300 hover-glow-cyan">
 
                         [ START ANALYZE ]
 
                     </a>
 
-                    <a href="/?nav=map" target="_top" onclick="navTo('map'); return false;" class="px-8 py-4 border border-neon-cyan text-neon-cyan font-bold uppercase tracking-widest hover:bg-neon-cyan/10 transition-all duration-300 hover-glow-cyan">
+                    <a href="?nav=map" onclick="navTo('map');" class="px-8 py-4 border border-neon-cyan text-neon-cyan font-bold uppercase tracking-widest hover:bg-neon-cyan/10 transition-all duration-300 hover-glow-cyan">
 
                         [ View Map ]
 
@@ -802,6 +802,16 @@
             attachListener(window.top);
             attachListener(window.parent);
             attachListener(window);
+
+            // Auto-check query params on iframe load
+            try {
+                var params = new URLSearchParams(window.location.search);
+                var qNav = params.get('nav');
+                if (qNav === 'app' || qNav === 'map') {
+                    if (window.top) window.top.postMessage({ type: 'archaeolis_nav', page: qNav }, '*');
+                    if (window.parent) window.parent.postMessage({ type: 'archaeolis_nav', page: qNav }, '*');
+                }
+            } catch(e) {}
         })();
 
         function navTo(page) {
