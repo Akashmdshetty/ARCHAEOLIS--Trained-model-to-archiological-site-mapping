@@ -63,6 +63,34 @@ def lookup_place_coordinates(query):
         pass
     return None, None, None
 
+def fetch_satellite_image(lat, lon, radius_km=1.0):
+    """
+    Fetches real high-resolution Esri World Imagery satellite photo for target lat/lon coordinates.
+    """
+    try:
+        delta_lat = float(radius_km) / 111.0
+        delta_lon = float(radius_km) / (111.0 * max(0.1, math.cos(math.radians(float(lat)))))
+        
+        min_lat = float(lat) - delta_lat
+        max_lat = float(lat) + delta_lat
+        min_lon = float(lon) - delta_lon
+        max_lon = float(lon) + delta_lon
+        
+        url = (
+            f"https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/export?"
+            f"bbox={min_lon:.6f},{min_lat:.6f},{max_lon:.6f},{max_lat:.6f}"
+            f"&bboxSR=4326&imageSR=4326&size=512,512&format=jpg&f=image"
+        )
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ARCHAEOLIS/2.0'})
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            img_data = resp.read()
+            img = Image.open(io.BytesIO(img_data)).convert('RGB')
+            if img.size[0] >= 100 and img.size[1] >= 100:
+                return img
+    except Exception:
+        pass
+    return None
+
 # --- Premium Aesthetics & CSS ---
 def local_css():
     st.markdown("""
@@ -973,64 +1001,34 @@ elif st.session_state.mode == 'Portal':
         should_show_results = st.session_state.last_scanned_pos is not None
 
         if should_show_results:
-            st.toast(f"Scanning {st.session_state.scan_radius_km}km radius around {st.session_state.map_place_name}...", icon="📡")
+            st.toast(f"Fetching satellite imagery for {st.session_state.map_place_name}...", icon="🛰️")
             
-            # Compute a unique coordinate seed based on latitude and longitude
-            coord_seed = int((abs(float(active_lat)) * 1000 + abs(float(active_lon)) * 100000)) % (2**31 - 1)
+            # Fetch real satellite photo of the selected spot on Earth
+            sample_img = fetch_satellite_image(active_lat, active_lon, float(st.session_state.scan_radius_km))
             
-            proc_dir = "data/processed"
-            sample_img = None
-            if os.path.exists(proc_dir):
-                files = [f for f in os.listdir(proc_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
-                if files:
-                    sample_img = os.path.join(proc_dir, files[coord_seed % len(files)])
+            # Fallback if network request is offline or restricted
+            if sample_img is None:
+                coord_seed = int((abs(float(active_lat)) * 1000 + abs(float(active_lon)) * 100000)) % (2**31 - 1)
+                proc_dir = "data/processed"
+                if os.path.exists(proc_dir):
+                    files = [f for f in os.listdir(proc_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+                    if files:
+                        sample_img = os.path.join(proc_dir, files[coord_seed % len(files)])
             
-            if sample_img is None or not (isinstance(sample_img, str) and os.path.exists(sample_img)):
-                # Generate a high-resolution 512x512 synthetic satellite survey tile unique to target coordinates
+            if sample_img is None:
+                coord_seed = int((abs(float(active_lat)) * 1000 + abs(float(active_lon)) * 100000)) % (2**31 - 1)
                 h_s, w_s = 512, 512
                 coord_rng = np.random.RandomState(coord_seed)
                 synth_tile = np.zeros((h_s, w_s, 3), dtype=np.uint8)
-                
-                # Base terrain color based on coordinates (e.g. desert, forest, rocky soil)
                 base_r = int(coord_rng.randint(45, 95))
                 base_g = int(coord_rng.randint(65, 125))
                 base_b = int(coord_rng.randint(35, 75))
-                
                 noise_r = coord_rng.randint(-20, 20, (h_s, w_s))
                 noise_g = coord_rng.randint(-25, 25, (h_s, w_s))
                 noise_b = coord_rng.randint(-15, 15, (h_s, w_s))
-                
                 synth_tile[:, :, 0] = np.uint8(np.clip(base_r + noise_r, 0, 255))
                 synth_tile[:, :, 1] = np.uint8(np.clip(base_g + noise_g, 0, 255))
                 synth_tile[:, :, 2] = np.uint8(np.clip(base_b + noise_b, 0, 255))
-                
-                # Generate a coordinate-specific number of structural anomalies (0 to 4 features)
-                num_features = coord_rng.randint(0, 5)
-                for _ in range(num_features):
-                    shape_kind = coord_rng.choice(["rect", "circle", "line_complex", "poly"])
-                    x_c = int(coord_rng.randint(60, w_s - 120))
-                    y_c = int(coord_rng.randint(60, h_s - 120))
-                    th = int(coord_rng.randint(2, 6))
-                    col = (int(coord_rng.randint(110, 160)), int(coord_rng.randint(115, 165)), int(coord_rng.randint(95, 140)))
-                    
-                    if shape_kind == "rect":
-                        w_box = int(coord_rng.randint(45, 130))
-                        h_box = int(coord_rng.randint(45, 130))
-                        cv2.rectangle(synth_tile, (x_c, y_c), (x_c + w_box, y_c + h_box), col, th)
-                    elif shape_kind == "circle":
-                        rad = int(coord_rng.randint(25, 70))
-                        cv2.circle(synth_tile, (x_c, y_c), rad, col, th)
-                    elif shape_kind == "line_complex":
-                        x2 = x_c + int(coord_rng.randint(50, 160))
-                        y2 = y_c + int(coord_rng.randint(-30, 120))
-                        cv2.line(synth_tile, (x_c, y_c), (x2, y2), col, th)
-                    elif shape_kind == "poly":
-                        pts = np.array([[x_c, y_c], 
-                                        [x_c + coord_rng.randint(30, 80), y_c - coord_rng.randint(20, 50)], 
-                                        [x_c + coord_rng.randint(70, 130), y_c + coord_rng.randint(30, 80)],
-                                        [x_c - coord_rng.randint(10, 40), y_c + coord_rng.randint(40, 90)]], np.int32)
-                        cv2.polylines(synth_tile, [pts], isClosed=True, color=col, thickness=th)
-
                 sample_img = Image.fromarray(synth_tile)
 
             res = run_analysis_pipeline(sample_img)
