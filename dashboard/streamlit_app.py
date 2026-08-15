@@ -807,17 +807,19 @@ elif st.session_state.mode == 'Portal':
                             composite = (composite * 255).astype(np.uint8)
                         else:
                             composite = np.clip(composite, 0, 255).astype(np.uint8)
-                    if show_v: composite = overlay_mask(composite, res['veg'], (0, 255, 0), 0.3)
-                    if show_r: composite = overlay_mask(composite, res['ruins'], (0, 0, 255), 0.5)
-                    if show_f: composite = overlay_mask(composite, res['faults'], (255, 0, 255), 0.6)
+
+                    # Binarize masks with strict thresholds
+                    v_bin = (res['veg'] > 128).astype(np.uint8) if res['veg'].dtype != np.uint8 else (res['veg'] > 128).astype(np.uint8)
+                    r_bin = (res['ruins'] > 128).astype(np.uint8) if res['ruins'].dtype != np.uint8 else (res['ruins'] > 128).astype(np.uint8)
+                    f_bin = (res['faults'] > 0.35).astype(np.uint8)
+
+                    if show_v and v_bin.any(): composite = overlay_mask(composite, v_bin, (0, 230, 118), 0.35)
+                    if show_r and r_bin.any(): composite = overlay_mask(composite, r_bin, (255, 52, 100), 0.50)
+                    if show_f and f_bin.any(): composite = overlay_mask(composite, f_bin, (175, 82, 222), 0.45)
                     if show_e: composite = overlay_heatmap(composite, cv2.resize(res['erosion'], (composite.shape[1], composite.shape[0])))
                     if show_a: composite = draw_boxes(composite, res['artifacts'])
                     
-                    if len(composite.shape) == 3 and composite.shape[2] == 3:
-                        comp_disp = cv2.cvtColor(composite, cv2.COLOR_BGR2RGB)
-                    else:
-                        comp_disp = composite
-                    st.image(comp_disp, use_container_width=True)
+                    st.image(composite, caption="Layered Archeological Satellite Analysis", use_container_width=True)
                 
             with c2:
                 with st.container(border=True):
@@ -1057,24 +1059,34 @@ elif st.session_state.mode == 'Portal':
                         if comp.max() <= 1.0:
                             comp = (comp * 255).astype(np.uint8)
                         else:
-                            comp = np.clip(comp, 0, 255).astype(np.uint8)
-                    comp = overlay_mask(comp, res['veg'], (0, 255, 0), 0.2)
-                    comp = overlay_mask(comp, res['ruins'], (0, 0, 255), 0.4)
-                    comp = overlay_mask(comp, res['faults'], (255, 0, 255), 0.4)
+                            composite = np.clip(comp, 0, 255).astype(np.uint8)
+
+                    # Binarize masks with strict thresholds
+                    v_bin = (res['veg'] > 128).astype(np.uint8) if res['veg'].dtype != np.uint8 else (res['veg'] > 128).astype(np.uint8)
+                    r_bin = (res['ruins'] > 128).astype(np.uint8) if res['ruins'].dtype != np.uint8 else (res['ruins'] > 128).astype(np.uint8)
+                    f_bin = (res['faults'] > 0.35).astype(np.uint8)
+
+                    if v_bin.any(): comp = overlay_mask(comp, v_bin, (0, 230, 118), 0.35)
+                    if r_bin.any(): comp = overlay_mask(comp, r_bin, (255, 52, 100), 0.50)
+                    if f_bin.any(): comp = overlay_mask(comp, f_bin, (175, 82, 222), 0.45)
                     comp = draw_boxes(comp, res['artifacts'])
                     
-                    if len(comp.shape) == 3 and comp.shape[2] == 3:
-                        comp_disp = cv2.cvtColor(comp, cv2.COLOR_BGR2RGB)
-                    else:
-                        comp_disp = comp
-                    st.image(comp_disp, caption=f"Multi-hazard Layered Analysis for {st.session_state.scan_radius_km}km Zone around {st.session_state.map_place_name}", use_container_width=True)
+                    st.image(comp, caption=f"Multi-hazard Layered Analysis for {st.session_state.scan_radius_km}km Zone around {st.session_state.map_place_name}", use_container_width=True)
                 
             with colB:
                 with st.container(border=True):
-                    pred_idx = np.argmax(res['probs'])
-                    st.metric("Surrounding Site Integrity", "89.2%" if res['probs'][pred_idx] > 0.5 else "Moderate")
-                    st.metric("2km Potential Ruins", "HIGH CONFIDENCE" if np.sum(res['ruins']) > 10 else "LOW DENSITY")
-                    st.metric("2km Fault Discontinuity", "HIGH RISK" if np.sum(res['faults']) > 10 else "STABLE")
+                    # Compute pixel-accurate area metrics
+                    tot_pix = comp.shape[0] * comp.shape[1]
+                    ruin_pct = (np.count_nonzero(r_bin) / float(tot_pix)) * 100.0
+                    fault_pct = (np.count_nonzero(f_bin) / float(tot_pix)) * 100.0
+                    integrity = max(15.0, min(99.0, 100.0 - (ruin_pct * 1.4 + fault_pct * 1.8)))
+                    
+                    ruin_conf = "HIGH CONFIDENCE" if ruin_pct > 1.2 else ("MODERATE DETECTION" if ruin_pct > 0.2 else "LOW DENSITY")
+                    fault_conf = "HIGH RISK" if fault_pct > 1.5 else ("MODERATE RISK" if fault_pct > 0.2 else "STABLE GEOLOGY")
+                    
+                    st.metric("Surrounding Site Integrity", f"{integrity:.1f}%")
+                    st.metric("2km Potential Ruins", ruin_conf, delta=f"{ruin_pct:.2f}% Area")
+                    st.metric("2km Fault Discontinuity", fault_conf, delta=f"{fault_pct:.2f}% Coverage")
                     
                     st.write("### 📊 2km Zone Feature Distribution & Coordinates")
                     tab_m_bar, tab_m_pie = st.tabs(["Bar Chart", "Pie Chart"])
