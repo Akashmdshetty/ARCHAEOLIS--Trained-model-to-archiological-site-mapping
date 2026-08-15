@@ -574,22 +574,32 @@ def run_analysis_pipeline(image_input):
         hsv = cv2.cvtColor(img_np, cv2.COLOR_RGB2HSV)
         
         # Vegetation mask (Green range in HSV)
-        ve_mask = cv2.inRange(hsv, (35, 40, 40), (85, 255, 255))
+        ve_mask = cv2.inRange(hsv, (30, 35, 30), (90, 255, 255))
         
         # Ruins mask (Edge density + structural shapes)
-        edges = cv2.Canny(gray, 50, 150)
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-        ru_mask = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
+        blur = cv2.GaussianBlur(gray, (5, 5), 0)
+        edges = cv2.Canny(blur, 40, 120)
+        kernel_struct = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        ru_mask = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel_struct)
         
         # Erosion heatmap & fault mask
-        er_heat = cv2.GaussianBlur(edges.astype(np.float32)/255.0, (15, 15), 0)
-        fa_mask = cv2.dilate(edges, kernel, iterations=1).astype(np.float32)/255.0
+        er_heat = cv2.GaussianBlur(edges.astype(np.float32) / 255.0, (15, 15), 0)
+        er_heat = np.clip(er_heat * 1.5, 0.0, 1.0)
+        
+        fa_mask = cv2.dilate(edges, cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2)), iterations=1).astype(np.float32) / 255.0
+        fa_mask = (fa_mask > 0.45).astype(np.float32)
 
-        ruin_prob_val = float(np.clip(ru_mask.mean() / 40.0, 0.15, 0.92))
-        veg_prob_val  = float(np.clip(ve_mask.mean() / 50.0, 0.10, 0.85))
-        eros_risk_val = float(np.clip(er_heat.mean() * 2.5, 0.10, 0.88))
-        fault_prob_val= float(np.clip(fa_mask.mean() * 2.0, 0.05, 0.75))
-        artifact_prob = float(np.clip(ruin_prob_val * 0.7 + 0.1, 0.2, 0.85))
+        # Calculate realistic percentage probabilities derived directly from image content
+        ruin_ratio = float((ru_mask > 128).sum() / ru_mask.size)
+        veg_ratio  = float((ve_mask > 128).sum() / ve_mask.size)
+        fault_ratio= float(fa_mask.mean())
+        eros_ratio = float(er_heat.mean())
+
+        ruin_prob_val = float(np.clip(ruin_ratio * 4.5 + 0.02, 0.015, 0.88))
+        veg_prob_val  = float(np.clip(veg_ratio + 0.05, 0.02, 0.85))
+        eros_risk_val = float(np.clip(eros_ratio * 2.2 + 0.04, 0.03, 0.72))
+        fault_prob_val= float(np.clip(fault_ratio * 3.0 + 0.01, 0.01, 0.65))
+        artifact_prob = float(np.clip(ruin_prob_val * 0.75 + 0.08, 0.05, 0.92))
 
         labels = ["Ruins/Walls", "Erosion Zone", "Vegetation", "Fault Region", "Artifacts", "Clear Land"]
         probs  = np.array([ruin_prob_val, eros_risk_val, veg_prob_val, fault_prob_val, artifact_prob, 0.3], dtype=np.float32)
