@@ -569,6 +569,25 @@ if st.session_state.mode == 'Home':
         </style>
     """, unsafe_allow_html=True)
     
+    # Native Streamlit top action bar for guaranteed 100% reliable navigation on Streamlit Cloud
+    h_col1, h_col2, h_col3 = st.columns([2.2, 1.2, 1.2])
+    with h_col1:
+        st.markdown("<div style='padding:6px 16px; font-family:Orbitron,sans-serif; color:#00E5FF; font-size:1.1rem; font-weight:700;'>🏺 ARCHAEOLIS AI</div>", unsafe_allow_html=True)
+    with h_col2:
+        if st.button("🚀 START ANALYZE", key="home_top_app", use_container_width=True):
+            st.session_state.mode = 'Portal'
+            st.session_state.portal_tab_selection = "Manual Image Upload"
+            try: st.query_params["nav"] = "app"
+            except Exception: pass
+            st.rerun()
+    with h_col3:
+        if st.button("🛰️ VIEW MAP", key="home_top_map", use_container_width=True):
+            st.session_state.mode = 'Portal'
+            st.session_state.portal_tab_selection = "Interactive Map Discovery"
+            try: st.query_params["nav"] = "map"
+            except Exception: pass
+            st.rerun()
+    
     # Inject navigation event listener — targets window.top so that postMessage from
     # the nested landing.html iframe (inside components.html iframe) reaches the browser top.
     st.markdown("""
