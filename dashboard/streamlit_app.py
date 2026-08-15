@@ -575,15 +575,16 @@ if st.session_state.mode == 'Home':
         <svg style="display:none;">
           <script>
             (function() {
-                // The landing page is nested: browser -> streamlit iframe -> components.html iframe
-                // postMessage is sent to window.top from the innermost iframe,
-                // so we must listen on window.top (the actual browser window).
                 var topWin = window.top || window.parent || window;
                 if (!topWin._archaeolisNavListener) {
                     topWin.addEventListener('message', function(e) {
-                        if (e.data && e.data.type === 'streamlit:nav') {
-                            var url = topWin.location.href.split('?')[0];
-                            topWin.location.href = url + '?nav=' + e.data.page;
+                        if (e.data && (e.data.type === 'archaeolis_nav' || e.data.type === 'streamlit:nav')) {
+                            var dest = e.data.page || 'app';
+                            try {
+                                topWin.location.search = '?nav=' + dest;
+                            } catch(err) {
+                                window.location.search = '?nav=' + dest;
+                            }
                         }
                     }, false);
                     topWin._archaeolisNavListener = true;
@@ -605,29 +606,10 @@ if st.session_state.mode == 'Home':
         except UnicodeDecodeError:
             with open(landing_path, "r", encoding="latin-1") as f:
                 html_code = f.read()
-        # Use declare_component for official bidirectional Streamlit component communication
         try:
             import streamlit.components.v1 as components
-            landing_dir = os.path.dirname(landing_path)
-            if os.path.exists(os.path.join(landing_dir, "index.html")):
-                archaeolis_landing = components.declare_component("archaeolis_landing", path=landing_dir)
-                comp_val = archaeolis_landing(key="landing_component_nav")
-                if comp_val == "app":
-                    st.session_state.mode = 'Portal'
-                    st.session_state.portal_tab_selection = "Manual Image Upload"
-                    try: st.query_params["nav"] = "app"
-                    except Exception: pass
-                    st.rerun()
-                elif comp_val == "map":
-                    st.session_state.mode = 'Portal'
-                    st.session_state.portal_tab_selection = "Interactive Map Discovery"
-                    try: st.query_params["nav"] = "map"
-                    except Exception: pass
-                    st.rerun()
-                html_loaded = True
-            else:
-                components.html(html_code, height=4800, scrolling=True)
-                html_loaded = True
+            components.html(html_code, height=4800, scrolling=True)
+            html_loaded = True
         except Exception:
             pass
         # Last resort: st.html (renders inline, breaks Tailwind layout)

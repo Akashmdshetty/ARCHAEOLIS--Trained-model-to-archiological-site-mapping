@@ -807,18 +807,13 @@
         function navTo(page) {
             var dest = (page === 'map') ? 'map' : 'app';
             try {
-                window.parent.postMessage({
-                    isStreamlitMessage: true,
-                    type: "streamlit:setComponentValue",
-                    value: dest
-                }, "*");
+                if (window.top) window.top.postMessage({ type: 'archaeolis_nav', page: dest }, '*');
             } catch(e) {}
             try {
-                var a = document.createElement('a');
-                a.href = '/?nav=' + dest;
-                a.target = '_top';
-                document.body.appendChild(a);
-                a.click();
+                if (window.parent) window.parent.postMessage({ type: 'archaeolis_nav', page: dest }, '*');
+            } catch(e) {}
+            try {
+                window.postMessage({ type: 'archaeolis_nav', page: dest }, '*');
             } catch(e) {}
         }
 
