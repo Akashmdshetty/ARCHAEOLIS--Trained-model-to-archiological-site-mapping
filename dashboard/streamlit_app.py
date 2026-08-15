@@ -594,6 +594,48 @@ if st.session_state.mode == 'Home':
         </svg>
     """, unsafe_allow_html=True)
     
+    # Cyberpunk native button styles
+    st.markdown("""
+        <style>
+            div[data-testid="stColumn"] > div > div > div > div.stButton > button {
+                background: #00E5FF !important;
+                color: #0A101A !important;
+                font-family: 'Space Mono', monospace, sans-serif !important;
+                font-weight: 700 !important;
+                border: 1px solid #00E5FF !important;
+                box-shadow: 0 0 15px rgba(0, 229, 255, 0.4) !important;
+                text-transform: uppercase !important;
+                letter-spacing: 2px !important;
+                border-radius: 2px !important;
+                padding: 14px 28px !important;
+                font-size: 1rem !important;
+                transition: all 0.3s ease !important;
+            }
+            div[data-testid="stColumn"] > div > div > div > div.stButton > button:hover {
+                background: #FFFFFF !important;
+                color: #0A101A !important;
+                box-shadow: 0 0 25px rgba(0, 229, 255, 0.8) !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Native action bar positioned above the landing content
+    hero_bcol1, hero_bcol2 = st.columns(2)
+    with hero_bcol1:
+        if st.button("[ START ANALYZE ]", key="native_hero_analyze", use_container_width=True):
+            st.session_state.mode = 'Portal'
+            st.session_state.portal_tab_selection = "Manual Image Upload"
+            try: st.query_params["nav"] = "app"
+            except Exception: pass
+            st.rerun()
+    with hero_bcol2:
+        if st.button("[ VIEW MAP ]", key="native_hero_map", use_container_width=True):
+            st.session_state.mode = 'Portal'
+            st.session_state.portal_tab_selection = "Interactive Map Discovery"
+            try: st.query_params["nav"] = "map"
+            except Exception: pass
+            st.rerun()
+
     # Render the high-fidelity HTML landing page
     landing_path = os.path.join(os.path.dirname(__file__), "landing.html")
     if not os.path.exists(landing_path):
