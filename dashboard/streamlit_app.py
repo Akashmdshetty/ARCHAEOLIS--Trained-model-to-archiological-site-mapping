@@ -605,11 +605,29 @@ if st.session_state.mode == 'Home':
         except UnicodeDecodeError:
             with open(landing_path, "r", encoding="latin-1") as f:
                 html_code = f.read()
-        # Use components.html (iframe) — MUST be first to preserve Tailwind/CSS layout isolation
+        # Use declare_component for official bidirectional Streamlit component communication
         try:
             import streamlit.components.v1 as components
-            components.html(html_code, height=4800, scrolling=True)
-            html_loaded = True
+            landing_dir = os.path.dirname(landing_path)
+            if os.path.exists(os.path.join(landing_dir, "index.html")):
+                archaeolis_landing = components.declare_component("archaeolis_landing", path=landing_dir)
+                comp_val = archaeolis_landing(key="landing_component_nav")
+                if comp_val == "app":
+                    st.session_state.mode = 'Portal'
+                    st.session_state.portal_tab_selection = "Manual Image Upload"
+                    try: st.query_params["nav"] = "app"
+                    except Exception: pass
+                    st.rerun()
+                elif comp_val == "map":
+                    st.session_state.mode = 'Portal'
+                    st.session_state.portal_tab_selection = "Interactive Map Discovery"
+                    try: st.query_params["nav"] = "map"
+                    except Exception: pass
+                    st.rerun()
+                html_loaded = True
+            else:
+                components.html(html_code, height=4800, scrolling=True)
+                html_loaded = True
         except Exception:
             pass
         # Last resort: st.html (renders inline, breaks Tailwind layout)
