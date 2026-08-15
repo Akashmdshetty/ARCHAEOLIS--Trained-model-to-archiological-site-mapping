@@ -67,66 +67,123 @@ def lookup_place_coordinates(query):
 def local_css():
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Space+Grotesk:wght@400;700&family=Space+Mono:wght@400;700&display=swap');
     
+    /* Global App Container */
     .main {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        background: transparent !important;
         color: #f8fafc;
-        font-family: 'Inter', sans-serif;
+        font-family: 'Space Grotesk', sans-serif;
     }
     
-    .stApp {
-        background: linear-gradient(135deg, #05090F 0%, #0f172a 60%, #1e293b 100%) !important;
+    html, body {
+        background: #05090F !important;
         background-color: #05090F !important;
     }
     
-    .glass-card {
-        background: rgba(30, 41, 59, 0.7);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        padding: 2rem;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        margin-bottom: 1.5rem;
+    [data-testid="stAppViewContainer"], .stApp, .main {
+        background: transparent !important;
+        background-color: transparent !important;
     }
     
-    .hero-text {
-        font-family: 'Orbitron', sans-serif;
-        font-weight: 700;
-        background: linear-gradient(90deg, #60a5fa, #c084fc);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 3.5rem;
-        margin-bottom: 1rem;
+    /* Hide Streamlit Deprecation Warnings Box */
+    [data-testid="stNotification"] {
+        display: none !important;
+    }
+    .stAlert {
+        border-radius: 12px !important;
+        background: rgba(15, 23, 42, 0.8) !important;
+        border: 1px solid rgba(0, 229, 255, 0.3) !important;
     }
     
-    .stat-card {
-        text-align: center;
-        padding: 1rem;
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
+    /* Futuristic Glass Card */
+    .glass-card, div[data-testid="stVerticalBlockBorderWrapper"] {
+        background: rgba(10, 16, 26, 0.75) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 1px solid rgba(0, 229, 255, 0.25) !important;
+        border-radius: 16px !important;
+        padding: 1.5rem !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 229, 255, 0.1) !important;
+        margin-bottom: 1.5rem !important;
     }
     
-    .stat-value {
-        font-size: 2.2rem;
-        color: #60a5fa;
-        font-weight: 700;
+    /* Metric Cards Styling */
+    div[data-testid="stMetric"] {
+        background: rgba(15, 23, 42, 0.6) !important;
+        border: 1px solid rgba(0, 255, 170, 0.2) !important;
+        border-radius: 12px !important;
+        padding: 1rem 1.25rem !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+        transition: all 0.3s ease !important;
     }
     
+    div[data-testid="stMetric"]:hover {
+        border-color: rgba(0, 229, 255, 0.6) !important;
+        box-shadow: 0 0 15px rgba(0, 229, 255, 0.25) !important;
+    }
+    
+    div[data-testid="stMetricValue"] {
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 2.2rem !important;
+        color: #00FFAA !important;
+        text-shadow: 0 0 12px rgba(0, 255, 170, 0.4) !important;
+    }
+    
+    div[data-testid="stMetricLabel"] {
+        font-family: 'Space Mono', monospace !important;
+        font-size: 0.85rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        color: #94A3B8 !important;
+    }
+
+    div[data-testid="stMetricDelta"] {
+        font-family: 'Space Mono', monospace !important;
+        font-size: 0.8rem !important;
+    }
+    
+    /* Tabs Styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px !important;
+        border-bottom: 1px solid rgba(0, 229, 255, 0.2) !important;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background: rgba(15, 23, 42, 0.5) !important;
+        border: 1px solid rgba(0, 229, 255, 0.2) !important;
+        border-radius: 8px 8px 0 0 !important;
+        color: #94A3B8 !important;
+        font-family: 'Space Mono', monospace !important;
+        padding: 8px 16px !important;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: rgba(0, 229, 255, 0.15) !important;
+        border-color: #00E5FF !important;
+        color: #00E5FF !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Buttons Styling */
     .stButton>button {
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6) !important;
-        border: none !important;
-        color: white !important;
+        background: linear-gradient(90deg, rgba(0, 229, 255, 0.2), rgba(0, 255, 170, 0.2)) !important;
+        border: 1px solid #00E5FF !important;
+        color: #00E5FF !important;
         padding: 10px 24px !important;
-        border-radius: 10px !important;
-        font-weight: 600 !important;
+        border-radius: 8px !important;
+        font-family: 'Space Mono', monospace !important;
+        font-weight: 700 !important;
+        letter-spacing: 1px !important;
+        text-transform: uppercase !important;
         transition: all 0.3s ease !important;
     }
     
     .stButton>button:hover {
-        transform: scale(1.05) !important;
-        box-shadow: 0 0 20px rgba(59, 130, 246, 0.5) !important;
+        background: #00E5FF !important;
+        color: #05090F !important;
+        box-shadow: 0 0 20px rgba(0, 229, 255, 0.6) !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -154,73 +211,181 @@ def load_models_silent():
 
 # st.components.v1 deprecated after 2026-06-01 — using st.iframe instead
 
-def inject_particle_bg(canvas_id='particleCanvas'):
-    _js = (
-        "(function(){"
-        "  var CID = '" + canvas_id + r"';"
-        "  if(!window.parent||window.parent.document.getElementById(CID)) return;"
-        "  var pd=window.parent.document;"
-        "  pd.body.style.backgroundColor='#05090F';"
-        "  var wrap=pd.createElement('div');"
-        "  wrap.id=CID+'_wrap';"
-        "  wrap.style.cssText='position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:-9999;pointer-events:none;overflow:hidden;';"
-        "  var grid=pd.createElement('div');"
-        "  grid.style.cssText='position:absolute;inset:0;background-image:linear-gradient(rgba(0,255,170,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,170,0.06) 1px,transparent 1px);background-size:40px 40px;';"
-        "  wrap.appendChild(grid);"
-        "  var cv=pd.createElement('canvas');"
-        "  cv.id=CID; cv.style.cssText='position:absolute;top:0;left:0;opacity:0.75;';"
-        "  wrap.appendChild(cv); pd.body.appendChild(wrap);"
-        "  var _pst=pd.getElementById('pcss');if(!_pst){_pst=pd.createElement('style');_pst.id='pcss';_pst.textContent='.stApp,.main,.block-container,[data-testid=stAppViewBlockContainer],[data-testid=stVerticalBlock],[data-testid=stMarkdownContainer]{background:transparent!important;background-color:transparent!important} .glass-card{background:rgba(15,23,42,0.7)!important;backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,0.2)!important;border-radius:15px;padding:20px;margin-bottom:20px;} iframe{background:transparent !important;}';pd.head.appendChild(_pst)}"  
-        "  var ctx=cv.getContext('2d'),pts=[],N=120,mx=-9999,my=-9999;"
-        "  function upd(e){mx=e.clientX;my=e.clientY;}"
-        "  pd.addEventListener('mousemove',upd,true);"
-        "  window.addEventListener('mousemove',upd,true);"
-        "  window.parent.addEventListener('message',function(e){if(e.data.type==='mousemove'){mx=e.data.x;my=e.data.y;}},false);"
-        "  function mk(){"
-        "    var s=4+Math.random()*5;"
-        "    return{x:Math.random()*cv.width,y:Math.random()*cv.height,s:s,bs:s,"
-        "           sx:(Math.random()-0.5)*0.45,sy:(Math.random()-0.5)*0.45,"
-        "           h:Math.random()>0.5?'0,255,170':'0,229,255',a:0.5+Math.random()*0.5};"
-        "  }"
-        "  function init(){"
-        "    cv.width=pd.defaultView.innerWidth;cv.height=pd.defaultView.innerHeight;"
-        "    pts=[];for(var i=0;i<N;i++)pts.push(mk());"
-        "  }"
-        "  function draw(){"
-        "    ctx.clearRect(0,0,cv.width,cv.height);"
-        "    for(var i=0;i<pts.length;i++){"
-        "      var p=pts[i];"
-        "      var dx=mx-p.x,dy=my-p.y,d=Math.sqrt(dx*dx+dy*dy),MD=180;"
-        "      if(d<MD){var f=(MD-d)/MD;p.x-=(dx/d)*f*6;p.y-=(dy/d)*f*6;p.s=p.bs+f*4;}"
-        "      else{p.s+=(p.bs-p.s)*0.08;}"
-        "      p.x+=p.sx;p.y+=p.sy;"
-        "      if(p.x<0)p.x=cv.width;if(p.x>cv.width)p.x=0;"
-        "      if(p.y<0)p.y=cv.height;if(p.y>cv.height)p.y=0;"
-        "      var g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.s*2.5);"
-        "      g.addColorStop(0,'rgba('+p.h+','+p.a+')');"
-        "      g.addColorStop(0.5,'rgba('+p.h+','+(p.a*0.4)+')');"
-        "      g.addColorStop(1,'rgba('+p.h+',0)');"
-        "      ctx.beginPath();ctx.arc(p.x,p.y,p.s*2.5,0,Math.PI*2);"
-        "      ctx.fillStyle=g;ctx.fill();"
-        "      ctx.beginPath();ctx.arc(p.x,p.y,p.s*0.45,0,Math.PI*2);"
-        "      ctx.fillStyle='rgba('+p.h+','+p.a+')';ctx.fill();"
-        "      for(var j=i+1;j<pts.length;j++){"
-        "        var q=pts[j],dd=Math.hypot(p.x-q.x,p.y-q.y);"
-        "        if(dd<140){"
-        "          ctx.strokeStyle='rgba(0,255,170,'+(1-dd/140)*0.65+')';"
-        "          ctx.lineWidth=2.5;"
-        "          ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke();"
-        "        }"
-        "      }"
-        "    }"
-        "    pd.defaultView.requestAnimationFrame(draw);"
-        "  }"
-        "  pd.defaultView.addEventListener('resize',init);"
-        "  setTimeout(init,400);init();draw();"
-        "})();"
-    )
-    # Particle background disabled (st.components.v1.html removed in Streamlit >=1.45)
-    pass
+def inject_particle_bg():
+    # Renders high-performance canvas floating atoms as a fixed full-viewport background iframe
+    html_code = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: transparent;
+        }
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            opacity: 0.85;
+            z-index: 0;
+        }
+        .grid-overlay {
+            position: fixed;
+            inset: 0;
+            background-image: linear-gradient(rgba(0, 255, 170, 0.06) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0, 255, 170, 0.06) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 1;
+        }
+    </style>
+    </head>
+    <body>
+        <div class="grid-overlay"></div>
+        <canvas id="particleCanvas"></canvas>
+        <script>
+            (function() {
+                var cv = document.getElementById('particleCanvas');
+                var ctx = cv.getContext('2d');
+                var pts = [], N = 100, mx = -9999, my = -9999;
+                
+                function upd(e) { mx = e.clientX; my = e.clientY; }
+                window.addEventListener('mousemove', upd, true);
+                
+                window.addEventListener('message', function(e) {
+                    if (e.data && e.data.type === 'mousemove') {
+                        mx = e.data.x;
+                        my = e.data.y;
+                    }
+                }, false);
+                
+                function mk() {
+                    var s = 3 + Math.random() * 4;
+                    return {
+                        x: Math.random() * cv.width,
+                        y: Math.random() * cv.height,
+                        s: s, bs: s,
+                        sx: (Math.random() - 0.5) * 0.35,
+                        sy: (Math.random() - 0.5) * 0.35,
+                        h: Math.random() > 0.5 ? '0,255,170' : '0,229,255',
+                        a: 0.4 + Math.random() * 0.4
+                    };
+                }
+                
+                function init() {
+                    cv.width = window.innerWidth || 1920;
+                    cv.height = window.innerHeight || 1080;
+                    pts = [];
+                    for (var i = 0; i < N; i++) pts.push(mk());
+                }
+                
+                function draw() {
+                    ctx.clearRect(0, 0, cv.width, cv.height);
+                    for (var i = 0; i < pts.length; i++) {
+                        var p = pts[i];
+                        var dx = mx - p.x, dy = my - p.y, d = Math.sqrt(dx * dx + dy * dy), MD = 150;
+                        if (d < MD) {
+                            var f = (MD - d) / MD;
+                            p.x -= (dx / d) * f * 4;
+                            p.y -= (dy / d) * f * 4;
+                            p.s = p.bs + f * 3;
+                        } else {
+                            p.s += (p.bs - p.s) * 0.08;
+                        }
+                        p.x += p.sx; p.y += p.sy;
+                        if (p.x < 0) p.x = cv.width; if (p.x > cv.width) p.x = 0;
+                        if (p.y < 0) p.y = cv.height; if (p.y > cv.height) p.y = 0;
+                        
+                        var g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.s * 2.2);
+                        g.addColorStop(0, 'rgba(' + p.h + ',' + p.a + ')');
+                        g.addColorStop(0.5, 'rgba(' + p.h + ',' + (p.a * 0.3) + ')');
+                        g.addColorStop(1, 'rgba(' + p.h + ',0)');
+                        
+                        ctx.beginPath(); ctx.arc(p.x, p.y, p.s * 2.2, 0, Math.PI * 2);
+                        ctx.fillStyle = g; ctx.fill();
+                        
+                        ctx.beginPath(); ctx.arc(p.x, p.y, p.s * 0.4, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(' + p.h + ',' + p.a + ')'; ctx.fill();
+                        
+                        for (var j = i + 1; j < pts.length; j++) {
+                            var q = pts[j], dd = Math.hypot(p.x - q.x, p.y - q.y);
+                            if (dd < 100) {
+                                ctx.strokeStyle = 'rgba(0,255,170,' + (1 - dd / 100) * 0.35 + ')';
+                                ctx.lineWidth = 1.2;
+                                ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+                            }
+                        }
+                    }
+                    requestAnimationFrame(draw);
+                }
+                
+                window.addEventListener('resize', init);
+                init();
+                draw();
+
+                try {
+                    var topWin = window.top || window.parent;
+                    if (topWin && !topWin._archaeolisMouseListener) {
+                        topWin.addEventListener('mousemove', function(e) {
+                            var frames = topWin.document.querySelectorAll('iframe');
+                            for (var i = 0; i < frames.length; i++) {
+                                try {
+                                    frames[i].contentWindow.postMessage({ type: 'mousemove', x: e.clientX, y: e.clientY }, '*');
+                                } catch(err) {}
+                            }
+                        }, true);
+                        topWin._archaeolisMouseListener = true;
+                    }
+                } catch(e) {}
+            })();
+        </script>
+    </body>
+    </html>
+    """
+    st.markdown("""
+        <style>
+            html, body {
+                background: #05090F !important;
+                background-color: #05090F !important;
+            }
+            .stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewBlockContainer"], .main {
+                background: transparent !important;
+                background-color: transparent !important;
+            }
+            /* Target ONLY particle canvas background iframe */
+            iframe[srcdoc*="particleCanvas"] {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                z-index: 0 !important;
+                pointer-events: none !important;
+                border: none !important;
+            }
+            /* Ensure map and interactive components retain full pointer events and normal position */
+            .stFolium, iframe[title*="folium"], [data-testid="stCustomComponentV1"]:not(:has(iframe[srcdoc*="particleCanvas"])) iframe {
+                position: relative !important;
+                z-index: 5 !important;
+                pointer-events: auto !important;
+            }
+            .block-container, [data-testid="stHeader"] {
+                position: relative !important;
+                z-index: 10 !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+    try:
+        import streamlit.components.v1 as components
+        components.html(html_code, height=0, width=0)
+    except Exception:
+        pass
 
 # --- App Logic & State ---
 if 'mode' not in st.session_state:
@@ -231,24 +396,29 @@ if 'use_real_model' not in st.session_state:
     st.session_state.use_real_model = True
 
 # Handle navigation from the HTML landing page
+nav_val = None
 try:
     nav_val = st.query_params.get("nav")
 except Exception:
-    nav_val = None
+    pass
 
 if not nav_val:
     try:
         qp = st.experimental_get_query_params()
         nav_val = qp.get("nav", [None])[0]
     except Exception:
-        nav_val = None
+        pass
 
 if nav_val == "app":
     st.session_state.mode = 'Portal'
     st.session_state.portal_tab_selection = "Manual Image Upload"
+    try: st.query_params.clear()
+    except Exception: pass
 elif nav_val == "map":
     st.session_state.mode = 'Portal'
     st.session_state.portal_tab_selection = "Interactive Map Discovery"
+    try: st.query_params.clear()
+    except Exception: pass
 
 # --- UI Header ---
 if st.session_state.mode != 'Home':
@@ -403,12 +573,62 @@ if st.session_state.mode == 'Home':
         </style>
     """, unsafe_allow_html=True)
     
+    # Inject navigation event listener — targets window.top so that postMessage from
+    # the nested landing.html iframe (inside components.html iframe) reaches the browser top.
+    st.markdown("""
+        <svg style="display:none;">
+          <script>
+            (function() {
+                // The landing page is nested: browser -> streamlit iframe -> components.html iframe
+                // postMessage is sent to window.top from the innermost iframe,
+                // so we must listen on window.top (the actual browser window).
+                var topWin = window.top || window.parent || window;
+                if (!topWin._archaeolisNavListener) {
+                    topWin.addEventListener('message', function(e) {
+                        if (e.data && e.data.type === 'streamlit:nav') {
+                            var url = topWin.location.href.split('?')[0];
+                            topWin.location.href = url + '?nav=' + e.data.page;
+                        }
+                    }, false);
+                    topWin._archaeolisNavListener = true;
+                }
+            })();
+          </script>
+        </svg>
+    """, unsafe_allow_html=True)
+    
     # Render the high-fidelity HTML landing page
-    try:
-        with open("dashboard/landing.html", "r", encoding="utf-8") as f:
-            html_code = f.read()
-        st.markdown(html_code, unsafe_allow_html=True)
-    except Exception as e:
+    landing_path = os.path.join(os.path.dirname(__file__), "landing.html")
+    if not os.path.exists(landing_path):
+        landing_path = "dashboard/landing.html"
+    html_loaded = False
+    if os.path.exists(landing_path):
+        try:
+            with open(landing_path, "r", encoding="utf-8") as f:
+                html_code = f.read()
+        except UnicodeDecodeError:
+            with open(landing_path, "r", encoding="latin-1") as f:
+                html_code = f.read()
+        # Use components.html (iframe) — MUST be first to preserve Tailwind/CSS layout isolation
+        try:
+            import streamlit.components.v1 as components
+            components.html(html_code, height=4800, scrolling=True)
+            html_loaded = True
+        except Exception:
+            pass
+        # Last resort: st.html (renders inline, breaks Tailwind layout)
+        if not html_loaded:
+            try:
+                st.html(html_code)
+                html_loaded = True
+            except AttributeError:
+                pass
+        # Absolute last resort: markdown inject
+        if not html_loaded:
+            st.markdown(html_code, unsafe_allow_html=True)
+            html_loaded = True
+    if not html_loaded:
+        e = "landing.html not found"
         # Fallback if landing.html is missing
         st.markdown("""
         <div style='text-align:center; padding: 4rem 2rem; color: #f8fafc;'>
@@ -462,6 +682,8 @@ elif st.session_state.mode == 'Portal':
     with nav_col1:
         if st.button("← Back to Home", key="top_back_home", use_container_width=True):
             st.session_state.mode = 'Home'
+            try: st.query_params.clear()
+            except Exception: pass
             st.rerun()
     with nav_col2:
         st.markdown("""
@@ -474,23 +696,18 @@ elif st.session_state.mode == 'Portal':
 
     st.markdown("---")
 
-    # Sidebar Navigation & Info
-    st.sidebar.markdown(f"""
-        <div class="glass-card" style="padding: 1rem; border-radius: 10px;">
-            <p style="margin:0; font-family:'Orbitron'; font-size:0.9rem; color:#00E5FF;">PORTAL NAVIGATION</p>
-        </div>
+    # Sidebar hidden — navigation is handled by the top bar buttons only
+    st.markdown("""
+        <style>
+            [data-testid="stSidebar"], [data-testid="collapsedControl"] {
+                display: none !important;
+            }
+            .main .block-container {
+                padding-left: 1.5rem !important;
+                max-width: 100% !important;
+            }
+        </style>
     """, unsafe_allow_html=True)
-    
-    if st.sidebar.button("← Back to Home", key="sidebar_back_home"):
-        st.session_state.mode = 'Home'
-        st.rerun()
-        
-    st.sidebar.markdown("---")
-    
-    if st.session_state.registry:
-        st.sidebar.subheader("Recent Discoveries")
-        for i, site in enumerate(st.session_state.registry[-5:]):
-            st.sidebar.info(f"📍 {site['type']} ({site['lat']:.2f}, {site['lon']:.2f})")
 
     tabs = ["Interactive Map Discovery", "Manual Image Upload"]
     if "portal_tab_selection" not in st.session_state:
@@ -505,263 +722,288 @@ elif st.session_state.mode == 'Portal':
     st.session_state.portal_tab_selection = portal_tab
     
     if portal_tab == "Manual Image Upload":
-        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-        uploaded_file = st.file_uploader("Drop satellite / drone image here", type=['jpg', 'jpeg', 'png', 'tif'])
+        with st.container(border=True):
+            uploaded_file = st.file_uploader("Drop satellite / drone image here", type=['jpg', 'jpeg', 'png', 'tif'])
+            
+            if not uploaded_file:
+                st.info("💡 Please upload a satellite or drone image above to start the survey analysis.")
         
-        if not uploaded_file:
-            st.info("💡 **Showing Sample Satellite Sector Analysis Below.** Drop your own satellite/drone image above to analyze custom imagery!")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        image_to_process = uploaded_file if uploaded_file else "test_output.png"
-        
-        if image_to_process:
-            res = run_analysis_pipeline(image_to_process)
+        if uploaded_file:
+            res = run_analysis_pipeline(uploaded_file)
             
             c1, c2 = st.columns([1, 1])
             with c1:
-                st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-                # Controls logic
-                st.subheader("Layer Controls")
-                show_r = st.toggle("Ruins (Red)", True)
-                show_v = st.toggle("Vegetation (Green)", True)
-                show_a = st.toggle("Artifacts (Blue Boxes)", True)
-                show_e = st.toggle("Erosion Risk (Yellow)", True)
-                show_f = st.toggle("Land Faults (Purple)", True)
-                
-                composite = res['img_np'].copy()
-                if show_v: composite = overlay_mask(composite, res['veg'], (0, 255, 0), 0.3)
-                if show_r: composite = overlay_mask(composite, res['ruins'], (0, 0, 255), 0.5)
-                if show_f: composite = overlay_mask(composite, res['faults'], (255, 0, 255), 0.6)
-                if show_e: composite = overlay_heatmap(composite, cv2.resize(res['erosion'], (composite.shape[1], composite.shape[0])))
-                if show_a: composite = draw_boxes(composite, res['artifacts'])
-                
-                st.image(composite, use_column_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
+                with st.container(border=True):
+                    # Controls logic
+                    st.subheader("Layer Controls")
+                    show_r = st.toggle("Ruins (Red)", True)
+                    show_v = st.toggle("Vegetation (Green)", True)
+                    show_a = st.toggle("Artifacts (Blue Boxes)", True)
+                    show_e = st.toggle("Erosion Risk (Yellow)", True)
+                    show_f = st.toggle("Land Faults (Purple)", True)
+                    
+                    composite = res['img_np'].copy()
+                    if composite.dtype != np.uint8:
+                        if composite.max() <= 1.0:
+                            composite = (composite * 255).astype(np.uint8)
+                        else:
+                            composite = np.clip(composite, 0, 255).astype(np.uint8)
+                    if show_v: composite = overlay_mask(composite, res['veg'], (0, 255, 0), 0.3)
+                    if show_r: composite = overlay_mask(composite, res['ruins'], (0, 0, 255), 0.5)
+                    if show_f: composite = overlay_mask(composite, res['faults'], (255, 0, 255), 0.6)
+                    if show_e: composite = overlay_heatmap(composite, cv2.resize(res['erosion'], (composite.shape[1], composite.shape[0])))
+                    if show_a: composite = draw_boxes(composite, res['artifacts'])
+                    
+                    if len(composite.shape) == 3 and composite.shape[2] == 3:
+                        comp_disp = cv2.cvtColor(composite, cv2.COLOR_BGR2RGB)
+                    else:
+                        comp_disp = composite
+                    st.image(comp_disp, use_container_width=True)
                 
             with c2:
-                st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-                st.write("### 🔍 Analysis Results")
-                pred_idx = np.argmax(res['probs'])
-                st.success(f"**Primary Feature:** {res['labels'][pred_idx]}")
+                with st.container(border=True):
+                    st.write("### 🔍 Analysis Results")
+                    pred_idx = np.argmax(res['probs'])
+                    st.success(f"**Primary Feature:** {res['labels'][pred_idx]}")
 
-                # Risk metrics
-                st.write("### ⚠️ Hazard Report")
-                col_m1, col_m2 = st.columns(2)
-                with col_m1:
-                    st.metric("🏛️ Ruin Probability",    f"{res['ruin_prob']*100:.1f}%")
-                    st.metric("🌊 Erosion Risk",        f"{res['erosion_risk']*100:.1f}%")
-                with col_m2:
-                    st.metric("⛰️ Landslide Risk",     f"{res['landslide_risk']*100:.1f}%")
-                    st.metric("⚡ Fault Probability",  f"{res['fault_prob']*100:.1f}%")
+                    # Risk metrics
+                    st.write("### ⚠️ Hazard Report")
+                    col_m1, col_m2 = st.columns(2)
+                    with col_m1:
+                        st.metric("🏛️ Ruin Probability",    f"{res['ruin_prob']*100:.1f}%")
+                        st.metric("🌊 Erosion Risk",        f"{res['erosion_risk']*100:.1f}%")
+                    with col_m2:
+                        st.metric("⛰️ Landslide Risk",     f"{res['landslide_risk']*100:.1f}%")
+                        st.metric("⚡ Fault Probability",  f"{res['fault_prob']*100:.1f}%")
 
-                st.write("### 📊 Feature Breakdown & Coordinates Analysis")
-                tab_bar, tab_pie = st.tabs(["Bar Chart", "Pie Chart"])
-                probs_pct = [float(p) * 100.0 for p in res['probs']]
-                loc_name = st.session_state.get('map_place_name', 'Manual Upload Sector')
-                loc_coords = f"{st.session_state.get('map_center', [55.4682, 15.4771])[0]:.4f}°N, {st.session_state.get('map_center', [55.4682, 15.4771])[1]:.4f}°E"
-                customdata_arr = [[loc_name, loc_coords] for _ in res['labels']]
-                
-                with tab_bar:
-                    fig_bar = px.bar(
-                        x=res['labels'], y=probs_pct,
-                        color=probs_pct, color_continuous_scale='Blues',
-                        labels={'x': f'Feature Category | Location: {loc_name} ({loc_coords})', 'y': 'Confidence / Probability (%)'}
-                    )
-                    fig_bar.update_traces(
-                        customdata=customdata_arr,
-                        hovertemplate='<b>Location:</b> %{customdata[0]}<br><b>GPS Coords:</b> %{customdata[1]}<br><b>Feature:</b> %{x}<br><b>Probability:</b> %{y:.1f}%<extra></extra>'
-                    )
-                    fig_bar.update_layout(yaxis=dict(ticksuffix="%"))
-                    st.plotly_chart(fig_bar, use_container_width=True)
-                with tab_pie:
-                    fig_pie = px.pie(
-                        values=probs_pct, names=res['labels'], 
-                        hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel
-                    )
-                    fig_pie.update_traces(
-                        textposition='inside', textinfo='percent+label',
-                        customdata=customdata_arr,
-                        hovertemplate='<b>Location:</b> %{customdata[0]}<br><b>GPS Coords:</b> %{customdata[1]}<br><b>Feature:</b> %{label}<br><b>Share:</b> %{percent}<extra></extra>'
-                    )
-                    st.plotly_chart(fig_pie, use_container_width=True)
+                    st.write("### 📊 Feature Breakdown & Coordinates Analysis")
+                    tab_bar, tab_pie = st.tabs(["Bar Chart", "Pie Chart"])
+                    probs_pct = [float(p) * 100.0 for p in res['probs']]
+                    loc_name = st.session_state.get('map_place_name', 'Manual Upload Sector')
+                    loc_coords = f"{st.session_state.get('map_center', [55.4682, 15.4771])[0]:.4f}°N, {st.session_state.get('map_center', [55.4682, 15.4771])[1]:.4f}°E"
+                    customdata_arr = [[loc_name, loc_coords] for _ in res['labels']]
+                    
+                    with tab_bar:
+                        fig_bar = px.bar(
+                            x=res['labels'], y=probs_pct,
+                            color=probs_pct, color_continuous_scale='Blues',
+                            labels={'x': f'Feature Category | Location: {loc_name} ({loc_coords})', 'y': 'Confidence / Probability (%)'}
+                        )
+                        fig_bar.update_traces(
+                            customdata=customdata_arr,
+                            hovertemplate='<b>Location:</b> %{customdata[0]}<br><b>GPS Coords:</b> %{customdata[1]}<br><b>Feature:</b> %{x}<br><b>Probability:</b> %{y:.1f}%<extra></extra>'
+                        )
+                        fig_bar.update_layout(yaxis=dict(ticksuffix="%"))
+                        st.plotly_chart(fig_bar, use_container_width=True)
+                    with tab_pie:
+                        fig_pie = px.pie(
+                            values=probs_pct, names=res['labels'], 
+                            hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel
+                        )
+                        fig_pie.update_traces(
+                            textposition='inside', textinfo='percent+label',
+                            customdata=customdata_arr,
+                            hovertemplate='<b>Location:</b> %{customdata[0]}<br><b>GPS Coords:</b> %{customdata[1]}<br><b>Feature:</b> %{label}<br><b>Share:</b> %{percent}<extra></extra>'
+                        )
+                        st.plotly_chart(fig_pie, use_container_width=True)
 
-                with st.expander("📋 Full Analysis Report"):
-                    st.text(res['risk_summary'])
-                st.markdown('</div>', unsafe_allow_html=True)
+                    with st.expander("📋 Full Analysis Report"):
+                        st.text(res['risk_summary'])
 
     elif portal_tab == "Interactive Map Discovery":
-        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-        st.write("### 🛰️ GPS-Linked Archaeological & 2km Surrounding Scanner")
-        st.markdown("Search for any location or click on the interactive map to scan the **2km surrounding radius** for archaeological features, ruins, and environmental hazards.")
-        
-        # Initialize map session states if not present
-        if 'map_center' not in st.session_state:
-            st.session_state.map_center = [55.4682, 15.4771]
-        if 'map_place_name' not in st.session_state:
-            st.session_state.map_place_name = "M0065A Survey Sector"
-        if 'scan_radius_km' not in st.session_state:
-            st.session_state.scan_radius_km = 2.0
+        with st.container(border=True):
+            st.write("### 🛰️ GPS-Linked Archaeological & 2km Surrounding Scanner")
+            st.markdown("Search for any location or click on the interactive map to scan the **2km surrounding radius** for archaeological features, ruins, and environmental hazards.")
+            
+            # Initialize map session states if not present
+            if 'map_center' not in st.session_state:
+                st.session_state.map_center = [30.3285, 35.4444]
+            if 'map_place_name' not in st.session_state:
+                st.session_state.map_place_name = "Petra, Jordan"
+            if 'scan_radius_km' not in st.session_state:
+                st.session_state.scan_radius_km = 2.0
+            if 'map_scan_triggered' not in st.session_state:
+                st.session_state.map_scan_triggered = False
 
-        # Location Search Controls
-        c_search1, c_btn, c_search2, c_search3 = st.columns([2.5, 1, 1.6, 0.9])
-        with c_search1:
-            search_query = st.text_input("🔍 Search Location / Site Name", placeholder="e.g. Mudigere, Rome, Machu Picchu, Petra, Giza...")
-        with c_btn:
-            st.markdown('<div style="height: 28px;"></div>', unsafe_allow_html=True)
-            search_clicked = st.button("🔎 Search", key="btn_map_search", use_container_width=True)
-        with c_search2:
-            preset_choice = st.selectbox("📍 Famous Presets", ["-- Quick Presets --", "Machu Picchu", "Petra", "Pompeii", "Giza Pyramids", "Rome Colosseum", "Stonehenge", "Athens Acropolis", "Angkor Wat", "Chichen Itza", "Hampi", "Varanasi"])
-        with c_radius if 'c_radius' in locals() else c_search3:
-            scan_radius = st.number_input("⭕ Radius (km)", min_value=0.5, max_value=10.0, value=float(st.session_state.scan_radius_km), step=0.5)
-            st.session_state.scan_radius_km = scan_radius
+            # Location Search Controls
+            c_search1, c_btn, c_search2, c_search3 = st.columns([2.5, 1, 1.8, 1])
+            with c_search1:
+                search_query = st.text_input("🔍 Search Location / Site Name", placeholder="e.g. Mudigere, Rome, Machu Picchu, Petra, Giza...")
+            with c_btn:
+                st.markdown('<div style="height: 28px;"></div>', unsafe_allow_html=True)
+                search_clicked = st.button("🔎 Search", key="btn_map_search", use_container_width=True)
+            with c_search2:
+                preset_choice = st.selectbox("📍 Famous Presets", ["-- Quick Presets --", "Machu Picchu", "Petra", "Pompeii", "Giza Pyramids", "Rome Colosseum", "Stonehenge", "Athens Acropolis", "Angkor Wat", "Chichen Itza", "Hampi", "Varanasi"])
+            with c_search3:
+                scan_radius = st.number_input("⭕ Radius (km)", min_value=0.5, max_value=10.0, value=float(st.session_state.scan_radius_km), step=0.5)
+                st.session_state.scan_radius_km = scan_radius
 
-        # Handle Search Action
-        target_lat, target_lon, place_title = None, None, None
-        if search_clicked:
-            if search_query and search_query.strip():
+            # Handle Search Action
+            target_lat, target_lon, place_title = None, None, None
+            if search_clicked and search_query and search_query.strip():
                 target_lat, target_lon, place_title = lookup_place_coordinates(search_query)
                 if target_lat is None:
-                    st.warning(f"⚠️ Location '{search_query}' not found. Try searching another city, town, or landmark name.", icon="🔍")
-            else:
-                st.info("💡 Please type a location or landmark name in the search field first.", icon="ℹ️")
-        elif search_query and search_query.strip():
-            target_lat, target_lon, place_title = lookup_place_coordinates(search_query)
-        elif preset_choice != "-- Quick Presets --":
-            target_lat, target_lon, place_title = lookup_place_coordinates(preset_choice)
+                    st.warning(f"⚠️ Location '{search_query}' not found. Try another name.", icon="🔍")
+                else:
+                    st.session_state.map_scan_triggered = True
+            elif search_clicked:
+                st.info("💡 Please type a location or landmark name first.", icon="ℹ️")
+            elif preset_choice != "-- Quick Presets --":
+                target_lat, target_lon, place_title = lookup_place_coordinates(preset_choice)
+                if target_lat is not None:
+                    st.session_state.map_scan_triggered = True
 
-        if target_lat is not None and target_lon is not None:
-            st.session_state.map_center = [target_lat, target_lon]
-            st.session_state.map_place_name = place_title
-            st.toast(f"📍 Location Found: {place_title} ({target_lat:.4f}, {target_lon:.4f})", icon="🎯")
+            if target_lat is not None and target_lon is not None:
+                st.session_state.map_center = [target_lat, target_lon]
+                st.session_state.map_place_name = place_title
+                st.toast(f"📍 Location Found: {place_title} ({target_lat:.4f}, {target_lon:.4f})", icon="🎯")
 
-        curr_lat, curr_lon = st.session_state.map_center
-        radius_m = st.session_state.scan_radius_km * 1000.0
+            curr_lat, curr_lon = st.session_state.map_center
+            radius_m = st.session_state.scan_radius_km * 1000.0
 
-        # Build Interactive Folium Map
-        m = folium.Map(location=[curr_lat, curr_lon], zoom_start=12 if st.session_state.scan_radius_km <= 3 else 10)
+            # Build Interactive Folium Map
+            m = folium.Map(location=[curr_lat, curr_lon], zoom_start=12 if st.session_state.scan_radius_km <= 3 else 10)
+            
+            folium.Circle(
+                location=[curr_lat, curr_lon],
+                radius=radius_m,
+                color="#00FFAA",
+                weight=2,
+                fill=True,
+                fill_color="#00FFAA",
+                fill_opacity=0.18,
+                popup=f"Scan Zone around {st.session_state.map_place_name}"
+            ).add_to(m)
+
+            folium.Marker(
+                [curr_lat, curr_lon],
+                popup=f"<b>{st.session_state.map_place_name}</b><br>Scan Radius: {st.session_state.scan_radius_km} km",
+                icon=folium.Icon(color="green", icon="info-sign")
+            ).add_to(m)
+
+            m.add_child(folium.LatLngPopup())
+            map_data = st_folium(m, height=420, use_container_width=True, returned_objects=["last_clicked"], key="archaeolis_map_component")
+
+            # Handle map click
+            active_lat, active_lon = curr_lat, curr_lon
+            clicked_map = False
+            if map_data and map_data.get('last_clicked'):
+                active_lat = map_data['last_clicked']['lat']
+                active_lon = map_data['last_clicked']['lng']
+                st.session_state.map_center = [active_lat, active_lon]
+                st.session_state.map_place_name = f"Custom Pin ({active_lat:.4f}°N, {active_lon:.4f}°E)"
+                clicked_map = True
+
+            # Target Status Bar + Scan Button
+            st.markdown("<br>", unsafe_allow_html=True)
+            btn_col1, btn_col2 = st.columns([2.5, 1])
+            with btn_col1:
+                st.markdown(f"**Target:** `{st.session_state.map_place_name}` &nbsp;|&nbsp; **Coords:** `{active_lat:.4f}°N, {active_lon:.4f}°E` &nbsp;|&nbsp; **Zone:** `{st.session_state.scan_radius_km} km Radius`")
+            with btn_col2:
+                run_scan = st.button("🛰️ Scan 2km Surrounding Zone", use_container_width=True)
+
+        # Only show results when user explicitly triggers a scan
+        should_show_results = run_scan or clicked_map or st.session_state.map_scan_triggered
         
-        # Add 2km Radius Scanning Circle Overlay
-        folium.Circle(
-            location=[curr_lat, curr_lon],
-            radius=radius_m,
-            color="#00FFAA",
-            weight=2,
-            fill=True,
-            fill_color="#00FFAA",
-            fill_opacity=0.18,
-            popup=f"2km Tactical Scan Zone around {st.session_state.map_place_name}"
-        ).add_to(m)
+        if run_scan:
+            st.session_state.map_scan_triggered = True
 
-        # Add Marker at Center
-        folium.Marker(
-            [curr_lat, curr_lon],
-            popup=f"<b>{st.session_state.map_place_name}</b><br>Scan Radius: {st.session_state.scan_radius_km} km",
-            icon=folium.Icon(color="green", icon="info-sign")
-        ).add_to(m)
-
-        m.add_child(folium.LatLngPopup())
-        map_data = st_folium(m, height=480, width=1200)
-
-        # Handle map click
-        active_lat, active_lon = curr_lat, curr_lon
-        if map_data and map_data.get('last_clicked'):
-            active_lat = map_data['last_clicked']['lat']
-            active_lon = map_data['last_clicked']['lng']
-            st.session_state.map_center = [active_lat, active_lon]
-            st.session_state.map_place_name = f"Custom Pin ({active_lat:.4f}N, {active_lon:.4f}E)"
-
-        # Target Status Bar
-        st.markdown("<br>", unsafe_allow_html=True)
-        btn_col1, btn_col2 = st.columns([2.5, 1])
-        with btn_col1:
-            st.markdown(f"**Target:** `{st.session_state.map_place_name}` &nbsp;|&nbsp; **Coords:** `{active_lat:.4f}N, {active_lon:.4f}E` &nbsp;|&nbsp; **Zone:** `{st.session_state.scan_radius_km} km Radius`")
-        with btn_col2:
-            run_scan = st.button("🛰️ Scan 2km Surrounding Zone", use_container_width=True)
-
-        # Perform 2km Surrounding Scan Analysis
-        if run_scan or map_data.get('last_clicked') or search_query or preset_choice != "-- Quick Presets --":
+        if should_show_results:
             st.toast(f"Scanning {st.session_state.scan_radius_km}km radius around {st.session_state.map_place_name}...", icon="📡")
             
             coord_seed = int((abs(active_lat) + abs(active_lon)) * 10000)
             np.random.seed(coord_seed)
             
             proc_dir = "data/processed"
+            sample_img = None
             if os.path.exists(proc_dir):
                 files = [f for f in os.listdir(proc_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
                 if files:
-                    sample_img = os.path.join(proc_dir, np.random.choice(files))
-                    res = run_analysis_pipeline(sample_img)
+                    sample_img = os.path.join(proc_dir, files[coord_seed % len(files)])
+            
+            res = run_analysis_pipeline(sample_img)
+            
+            st.markdown("---")
+            st.write(f"### 🛰️ {st.session_state.scan_radius_km}km Surrounding Regional Scan Results")
+            st.caption(f"Target: {st.session_state.map_place_name} ({active_lat:.4f}°N, {active_lon:.4f}°E)")
+            
+            # 2km Regional Key Metrics
+            area_sq_km = np.pi * (st.session_state.scan_radius_km ** 2)
+            m1, m2, m3, m4 = st.columns(4)
+            with m1:
+                st.metric("⭕ Scanned Zone", f"{area_sq_km:.2f} sq km", delta=f"{st.session_state.scan_radius_km} km Radius")
+            with m2:
+                st.metric("🏛️ Ruin Feature Density", f"{res['ruin_prob']*100:.1f}%", delta="Structural Detection")
+            with m3:
+                st.metric("🌊 Erosion Hazard Index", f"{res['erosion_risk']*100:.1f}%", delta="Geological Stability")
+            with m4:
+                st.metric("💎 Artifact Signals in Zone", f"{int(res['artifact_prob']*15)} Signals", delta=f"{res['artifact_prob']*100:.1f}% Confidence")
+
+            colA, colB = st.columns([2, 1])
+            with colA:
+                with st.container(border=True):
+                    comp = res['img_np'].copy()
+                    if comp.dtype != np.uint8:
+                        if comp.max() <= 1.0:
+                            comp = (comp * 255).astype(np.uint8)
+                        else:
+                            comp = np.clip(comp, 0, 255).astype(np.uint8)
+                    comp = overlay_mask(comp, res['veg'], (0, 255, 0), 0.2)
+                    comp = overlay_mask(comp, res['ruins'], (0, 0, 255), 0.4)
+                    comp = overlay_mask(comp, res['faults'], (255, 0, 255), 0.4)
+                    comp = draw_boxes(comp, res['artifacts'])
                     
-                    st.markdown("---")
-                    st.write(f"### 🛰️ {st.session_state.scan_radius_km}km Surrounding Regional Scan Results")
-                    st.caption(f"Target: {st.session_state.map_place_name} ({active_lat:.4f}N, {active_lon:.4f}E)")
+                    if len(comp.shape) == 3 and comp.shape[2] == 3:
+                        comp_disp = cv2.cvtColor(comp, cv2.COLOR_BGR2RGB)
+                    else:
+                        comp_disp = comp
+                    st.image(comp_disp, caption=f"Multi-hazard Layered Analysis for {st.session_state.scan_radius_km}km Zone around {st.session_state.map_place_name}", use_container_width=True)
+                
+            with colB:
+                with st.container(border=True):
+                    pred_idx = np.argmax(res['probs'])
+                    st.metric("Surrounding Site Integrity", "89.2%" if res['probs'][pred_idx] > 0.5 else "Moderate")
+                    st.metric("2km Potential Ruins", "HIGH CONFIDENCE" if np.sum(res['ruins']) > 10 else "LOW DENSITY")
+                    st.metric("2km Fault Discontinuity", "HIGH RISK" if np.sum(res['faults']) > 10 else "STABLE")
                     
-                    # 2km Regional Key Metrics
-                    area_sq_km = np.pi * (st.session_state.scan_radius_km ** 2)
-                    m1, m2, m3, m4 = st.columns(4)
-                    with m1:
-                        st.metric("⭕ Scanned Zone", f"{area_sq_km:.2f} sq km", delta=f"{st.session_state.scan_radius_km} km Radius")
-                    with m2:
-                        st.metric("🏛️ Ruin Feature Density", f"{res['ruin_prob']*100:.1f}%", delta="Structural Detection")
-                    with m3:
-                        st.metric("🌊 Erosion Hazard Index", f"{res['erosion_risk']*100:.1f}%", delta="Geological Stability")
-                    with m4:
-                        st.metric("💎 Artifact Signals in Zone", f"{int(res['artifact_prob']*15)} Signals", delta=f"{res['artifact_prob']*100:.1f}% Confidence")
+                    st.write("### 📊 2km Zone Feature Distribution & Coordinates")
+                    tab_m_bar, tab_m_pie = st.tabs(["Bar Chart", "Pie Chart"])
+                    m_probs_pct = [float(p) * 100.0 for p in res['probs']]
+                    m_customdata = [[st.session_state.map_place_name, f"{active_lat:.4f}°N, {active_lon:.4f}°E"] for _ in res['labels']]
+                    
+                    with tab_m_bar:
+                        f_bar = px.bar(
+                            x=res['labels'], y=m_probs_pct, color=m_probs_pct, color_continuous_scale='Blues',
+                            labels={'x': f'Feature Class | Target: {st.session_state.map_place_name} ({active_lat:.4f}°N, {active_lon:.4f}°E)', 'y': 'Confidence (%)'}
+                        )
+                        f_bar.update_traces(
+                            customdata=m_customdata,
+                            hovertemplate='<b>Location:</b> %{customdata[0]}<br><b>GPS Coords:</b> %{customdata[1]}<br><b>Feature:</b> %{x}<br><b>Probability:</b> %{y:.1f}%<extra></extra>'
+                        )
+                        f_bar.update_layout(yaxis=dict(ticksuffix="%"))
+                        st.plotly_chart(f_bar, use_container_width=True)
+                    with tab_m_pie:
+                        f_pie = px.pie(values=m_probs_pct, names=res['labels'], hole=0.3)
+                        f_pie.update_traces(
+                            textposition='inside', textinfo='percent+label',
+                            customdata=m_customdata,
+                            hovertemplate='<b>Location:</b> %{customdata[0]}<br><b>GPS Coords:</b> %{customdata[1]}<br><b>Feature:</b> %{label}<br><b>Share:</b> %{percent}<extra></extra>'
+                        )
+                        st.plotly_chart(f_pie, use_container_width=True)
 
-                    colA, colB = st.columns([2, 1])
-                    with colA:
-                        comp = res['img_np'].copy()
-                        comp = overlay_mask(comp, res['veg'], (0, 255, 0), 0.2)
-                        comp = overlay_mask(comp, res['ruins'], (0, 0, 255), 0.4)
-                        comp = overlay_mask(comp, res['faults'], (255, 0, 255), 0.4)
-                        comp = draw_boxes(comp, res['artifacts'])
-                        st.image(comp, caption=f"Multi-hazard Layered Analysis for {st.session_state.scan_radius_km}km Zone around {st.session_state.map_place_name}", use_column_width=True)
-                        
-                    with colB:
-                        pred_idx = np.argmax(res['probs'])
-                        st.metric("Surrounding Site Integrity", "89.2%" if res['probs'][pred_idx] > 0.5 else "Moderate")
-                        st.metric("2km Potential Ruins", "HIGH CONFIDENCE" if np.sum(res['ruins']) > 10 else "LOW DENSITY")
-                        st.metric("2km Fault Discontinuity", "HIGH RISK" if np.sum(res['faults']) > 10 else "STABLE")
-                        
-                        st.write("### 📊 2km Zone Feature Distribution & Coordinates")
-                        tab_m_bar, tab_m_pie = st.tabs(["Bar Chart", "Pie Chart"])
-                        m_probs_pct = [float(p) * 100.0 for p in res['probs']]
-                        m_customdata = [[st.session_state.map_place_name, f"{active_lat:.4f}°N, {active_lon:.4f}°E"] for _ in res['labels']]
-                        
-                        with tab_m_bar:
-                            f_bar = px.bar(
-                                x=res['labels'], y=m_probs_pct, color=m_probs_pct, color_continuous_scale='Blues',
-                                labels={'x': f'Feature Class | Target: {st.session_state.map_place_name} ({active_lat:.4f}°N, {active_lon:.4f}°E)', 'y': 'Confidence (%)'}
-                            )
-                            f_bar.update_traces(
-                                customdata=m_customdata,
-                                hovertemplate='<b>Location:</b> %{customdata[0]}<br><b>GPS Coords:</b> %{customdata[1]}<br><b>Feature:</b> %{x}<br><b>Probability:</b> %{y:.1f}%<extra></extra>'
-                            )
-                            f_bar.update_layout(yaxis=dict(ticksuffix="%"))
-                            st.plotly_chart(f_bar, use_container_width=True)
-                        with tab_m_pie:
-                            f_pie = px.pie(values=m_probs_pct, names=res['labels'], hole=0.3)
-                            f_pie.update_traces(
-                                textposition='inside', textinfo='percent+label',
-                                customdata=m_customdata,
-                                hovertemplate='<b>Location:</b> %{customdata[0]}<br><b>GPS Coords:</b> %{customdata[1]}<br><b>Feature:</b> %{label}<br><b>Share:</b> %{percent}<extra></extra>'
-                            )
-                            st.plotly_chart(f_pie, use_container_width=True)
+            site_entry = {
+                'place': st.session_state.map_place_name,
+                'lat': round(active_lat, 4), 
+                'lon': round(active_lon, 4),
+                'radius': f"{st.session_state.scan_radius_km} km",
+                'type': res['labels'][pred_idx],
+                'integrity': "89.2%" if res['probs'][pred_idx] > 0.5 else "Moderate",
+                'timestamp': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")
+            }
+            if not any(s['lat'] == active_lat and s['lon'] == active_lon for s in st.session_state.registry):
+                st.session_state.registry.append(site_entry)
 
-                        site_entry = {
-                            'place': st.session_state.map_place_name,
-                            'lat': round(active_lat, 4), 
-                            'lon': round(active_lon, 4),
-                            'radius': f"{st.session_state.scan_radius_km} km",
-                            'type': res['labels'][pred_idx],
-                            'integrity': "89.2%" if res['probs'][pred_idx] > 0.5 else "Moderate",
-                            'timestamp': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")
-                        }
-                        if not any(s['lat'] == active_lat and s['lon'] == active_lon for s in st.session_state.registry):
-                            st.session_state.registry.append(site_entry)
-
-                        report_data = f"""# ARCHAEO LIS 2km Regional Survey Report
+            report_data = f"""# ARCHAEOLIS 2km Regional Survey Report
 Generated: {site_entry['timestamp']}
 Target Location: {st.session_state.map_place_name}
 Center Coordinates: {active_lat:.6f}N, {active_lon:.6f}E
@@ -775,19 +1017,21 @@ Site Integrity: {site_entry['integrity']}
 - Land Faults: {"DETECTED" if np.sum(res['faults']) > 10 else "STABLE / CLEAR"}
 - Surrounding Artifact Signals: {int(res['artifact_prob']*15)} detected clusters ({res['artifact_prob']*100:.1f}% confidence)
 """
-                        st.download_button(
-                            label="📄 Export 2km Regional Report",
-                            data=report_data,
-                            file_name=f"regional_survey_2km_{active_lat:.2f}_{active_lon:.2f}.md",
-                            mime="text/markdown"
-                        )
-                    
-                    # ── Marked Locations Coordinates Table & Summary ───────────
-                    if st.session_state.registry:
-                        st.markdown("---")
-                        st.write("### 📍 Marked Locations & GPS Coordinates Registry")
-                        df_reg = pd.DataFrame(st.session_state.registry)
-                        df_reg.columns = [str(col).title() for col in df_reg.columns]
-                        st.dataframe(df_reg, use_container_width=True)
-
-        st.markdown('</div>', unsafe_allow_html=True)
+            st.download_button(
+                label="📄 Export 2km Regional Report",
+                data=report_data,
+                file_name=f"regional_survey_2km_{active_lat:.2f}_{active_lon:.2f}.md",
+                mime="text/markdown"
+            )
+        else:
+            # Show prompt to user when no scan has been triggered yet
+            st.markdown("---")
+            st.info("🛰️ **Select a location** using the search bar, presets dropdown, or click on the map — then click **Scan 2km Surrounding Zone** to begin analysis.", icon="📡")
+        
+        # ── Marked Locations Coordinates Table & Summary ───────────
+        if st.session_state.registry:
+            st.markdown("---")
+            st.write("### 📍 Marked Locations & GPS Coordinates Registry")
+            df_reg = pd.DataFrame(st.session_state.registry)
+            df_reg.columns = [str(col).title() for col in df_reg.columns]
+            st.dataframe(df_reg, use_container_width=True)

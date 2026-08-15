@@ -141,7 +141,7 @@ new_portal_code = """elif st.session_state.mode == 'Portal':
                 comp = overlay_mask(comp, res['ruins'], (0, 0, 255), 0.5)
                 comp = overlay_mask(comp, res['faults'], (255, 0, 255), 0.6)
                 
-                st.image(comp, use_column_width=True)
+                st.image(comp, use_container_width=True)
                 st.markdown('</div>', unsafe_allow_html=True)
                 
                 pred_label = res["labels"][np.argmax(res["probs"])]
@@ -152,7 +152,7 @@ new_portal_code = """elif st.session_state.mode == 'Portal':
         with tab2:
             st.markdown('<div class="grid-bg-container" style="min-height:500px; display:block;">', unsafe_allow_html=True)
             if res is not None:
-                st.image(res['img_np'], use_column_width=True)
+                st.image(res['img_np'], use_container_width=True)
             else:
                 st.markdown('<div class="hud-text" style="text-align:center;">AWAITING DATA</div>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -161,7 +161,7 @@ new_portal_code = """elif st.session_state.mode == 'Portal':
             st.markdown('<div class="grid-bg-container" style="min-height:500px; display:block;">', unsafe_allow_html=True)
             if res is not None:
                 h = overlay_heatmap(res['img_np'].copy(), cv2.resize(res['erosion'], (res['img_np'].shape[1], res['img_np'].shape[0])))
-                st.image(h, use_column_width=True)
+                st.image(h, use_container_width=True)
             else:
                 st.markdown('<div class="hud-text" style="text-align:center;">AWAITING DATA</div>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -170,7 +170,7 @@ new_portal_code = """elif st.session_state.mode == 'Portal':
             st.markdown('<div class="grid-bg-container" style="min-height:500px; display:block;">', unsafe_allow_html=True)
             if res is not None:
                 fm = overlay_mask(res['img_np'].copy(), res['faults'], (255, 0, 255), 0.8)
-                st.image(fm, use_column_width=True)
+                st.image(fm, use_container_width=True)
             else:
                 st.markdown('<div class="hud-text" style="text-align:center;">AWAITING DATA</div>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)

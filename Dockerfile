@@ -19,4 +19,4 @@ EXPOSE 8501
 
 # Command to run the simple Streamlit dashboard
 # Uses --server.headless=true to avoid trying to open a browser inside Docker
-CMD ["streamlit", "run", "dashboard/simple_app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true"]
+CMD ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true"]
