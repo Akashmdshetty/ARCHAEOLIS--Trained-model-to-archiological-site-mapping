@@ -84,7 +84,7 @@ def create_satellite_scanner_composite(base_rgb, ruins_mask, veg_mask, erosion_m
         else:
             er_scaled = np.zeros_like(er_norm)
             
-        mask_er = er_scaled > 0.68
+        mask_er = er_scaled > 0.82
         if mask_er.any():
             er_color = np.zeros((h, w, 3), dtype=np.uint8)
             er_color[:, :, 0] = np.uint8(np.clip(er_scaled * 255, 0, 255))
@@ -92,7 +92,7 @@ def create_satellite_scanner_composite(base_rgb, ruins_mask, veg_mask, erosion_m
             er_color[:, :, 2] = 0
             composite[mask_er] = cv2.addWeighted(er_color[mask_er], 0.40, composite[mask_er], 0.60, 0)
             
-            er_bin = (er_scaled > 0.72).astype(np.uint8)
+            er_bin = (er_scaled > 0.85).astype(np.uint8)
             contours_er, _ = cv2.findContours(er_bin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             cv2.drawContours(composite, contours_er, -1, (255, 170, 0), 2)
 
@@ -117,13 +117,13 @@ def create_satellite_scanner_composite(base_rgb, ruins_mask, veg_mask, erosion_m
         else:
             f_scaled = np.zeros_like(f_norm)
             
-        mask_f = f_scaled > 0.70
+        mask_f = f_scaled > 0.85
         if mask_f.any():
             fault_layer = composite.copy()
             fault_layer[mask_f] = [175, 82, 222]
             composite[mask_f] = cv2.addWeighted(fault_layer[mask_f], 0.45, composite[mask_f], 0.55, 0)
             
-            f_bin = (f_scaled > 0.75).astype(np.uint8)
+            f_bin = (f_scaled > 0.88).astype(np.uint8)
             contours_f, _ = cv2.findContours(f_bin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             cv2.drawContours(composite, contours_f, -1, (220, 120, 255), 2)
 

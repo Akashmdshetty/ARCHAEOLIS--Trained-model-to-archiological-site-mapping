@@ -630,24 +630,45 @@ def run_analysis_pipeline(image_input):
         }
     else:
         # High-speed computer-vision multi-spectral analysis fallback
+        h, w = img_np.shape[:2]
         gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
-        hsv = cv2.cvtColor(img_np, cv2.COLOR_RGB2HSV)
+        hsv  = cv2.cvtColor(img_np, cv2.COLOR_RGB2HSV)
         
-        # Vegetation mask (Green range in HSV)
-        ve_mask = cv2.inRange(hsv, (30, 35, 30), (90, 255, 255))
+        # 1. Vegetation mask (HSV Green Range)
+        ve_mask = cv2.inRange(hsv, (30, 35, 30), (85, 255, 255))
         
-        # Ruins mask (Edge density + structural shapes)
+        # 2. Ruins mask (Structural contours & closed polygon building shapes)
         blur = cv2.GaussianBlur(gray, (5, 5), 0)
-        edges = cv2.Canny(blur, 40, 120)
-        kernel_struct = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        ru_mask = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel_struct)
+        edges = cv2.Canny(blur, 60, 160)
+        ru_mask = np.zeros((h, w), dtype=np.uint8)
+        contours_r, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for c in contours_r:
+            area = cv2.contourArea(c)
+            if 40 < area < 3500:
+                peri = cv2.arcLength(c, True)
+                approx = cv2.approxPolyDP(c, 0.04 * peri, True)
+                if len(approx) in [4, 5, 6, 8]:
+                    cv2.drawContours(ru_mask, [c], -1, 255, -1)
         
-        # Erosion heatmap & fault mask
-        er_heat = cv2.GaussianBlur(edges.astype(np.float32) / 255.0, (15, 15), 0)
-        er_heat = np.clip(er_heat * 1.5, 0.0, 1.0)
+        # 3. Erosion Map (High terrain variance / bare soil regions excluding vegetation)
+        non_veg = cv2.bitwise_not(ve_mask)
+        lap = abs(cv2.Laplacian(gray, cv2.CV_32F))
+        lap_norm = cv2.GaussianBlur(lap, (15, 15), 0)
+        if lap_norm.max() > lap_norm.min():
+            er_heat = (lap_norm - lap_norm.min()) / (lap_norm.max() - lap_norm.min())
+        else:
+            er_heat = np.zeros((h, w), dtype=np.float32)
+        er_heat[non_veg == 0] *= 0.1
         
-        fa_mask = cv2.dilate(edges, cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2)), iterations=1).astype(np.float32) / 255.0
-        fa_mask = (fa_mask > 0.45).astype(np.float32)
+        # 4. Geological Faults (Linear fracture gradient lineaments)
+        sobel_x = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
+        sobel_y = cv2.Sobel(gray, cv2.CV_32F, 0, 1, ksize=3)
+        mag = np.sqrt(sobel_x**2 + sobel_y**2)
+        mag_blur = cv2.GaussianBlur(mag, (7, 7), 0)
+        if mag_blur.max() > mag_blur.min():
+            fa_mask = (mag_blur - mag_blur.min()) / (mag_blur.max() - mag_blur.min())
+        else:
+            fa_mask = np.zeros((h, w), dtype=np.float32)
 
         # Calculate realistic percentage probabilities derived directly from image content
         ruin_ratio = float((ru_mask > 128).sum() / ru_mask.size)
