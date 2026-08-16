@@ -765,11 +765,21 @@ if st.session_state.mode == 'Home':
 
 
     # Render the high-fidelity HTML landing page
-    landing_path = os.path.join(os.path.dirname(__file__), "landing.html")
-    if not os.path.exists(landing_path):
-        landing_path = "dashboard/landing.html"
+    landing_paths = [
+        os.path.join(os.path.dirname(__file__), "landing.html"),
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), "landing.html"),
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), "dashboard", "landing.html"),
+        "dashboard/landing.html",
+        "landing.html"
+    ]
+    landing_path = None
+    for p in landing_paths:
+        if os.path.exists(p):
+            landing_path = p
+            break
+
     html_loaded = False
-    if os.path.exists(landing_path):
+    if landing_path and os.path.exists(landing_path):
         try:
             with open(landing_path, "r", encoding="utf-8") as f:
                 html_code = f.read()
@@ -777,12 +787,13 @@ if st.session_state.mode == 'Home':
             with open(landing_path, "r", encoding="latin-1") as f:
                 html_code = f.read()
         try:
-            st.html(html_code)
+            import streamlit.components.v1 as components
+            data_uri = f"data:text/html;charset=utf-8,{urllib.parse.quote(html_code)}"
+            components.iframe(data_uri, height=4800, scrolling=True)
             html_loaded = True
         except Exception:
             try:
-                import streamlit.components.v1 as components
-                components.html(html_code, height=4800, scrolling=True)
+                st.html(html_code)
                 html_loaded = True
             except Exception:
                 st.markdown(html_code, unsafe_allow_html=True)

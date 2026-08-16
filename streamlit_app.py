@@ -13,4 +13,6 @@ if ROOT_DIR not in sys.path:
 dashboard_script = os.path.join(ROOT_DIR, "dashboard", "streamlit_app.py")
 with open(dashboard_script, "r", encoding="utf-8") as f:
     code = compile(f.read(), dashboard_script, "exec")
-    exec(code, globals())
+    env = globals().copy()
+    env["__file__"] = dashboard_script
+    exec(code, env)
