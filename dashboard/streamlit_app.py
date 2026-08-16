@@ -493,10 +493,13 @@ def inject_particle_bg():
         </style>
     """, unsafe_allow_html=True)
     try:
-        import streamlit.components.v1 as components
-        components.html(html_code, height=0, width=0)
+        st.html(html_code)
     except Exception:
-        pass
+        try:
+            import streamlit.components.v1 as components
+            components.html(html_code, height=0, width=0)
+        except Exception:
+            pass
 
 # --- App Logic & State ---
 if 'mode' not in st.session_state:
@@ -774,22 +777,16 @@ if st.session_state.mode == 'Home':
             with open(landing_path, "r", encoding="latin-1") as f:
                 html_code = f.read()
         try:
-            import streamlit.components.v1 as components
-            components.html(html_code, height=4800, scrolling=True)
+            st.html(html_code)
             html_loaded = True
         except Exception:
-            pass
-        # Last resort: st.html (renders inline, breaks Tailwind layout)
-        if not html_loaded:
             try:
-                st.html(html_code)
+                import streamlit.components.v1 as components
+                components.html(html_code, height=4800, scrolling=True)
                 html_loaded = True
-            except AttributeError:
-                pass
-        # Absolute last resort: markdown inject
-        if not html_loaded:
-            st.markdown(html_code, unsafe_allow_html=True)
-            html_loaded = True
+            except Exception:
+                st.markdown(html_code, unsafe_allow_html=True)
+                html_loaded = True
     if not html_loaded:
         e = "landing.html not found"
         # Fallback if landing.html is missing
