@@ -287,10 +287,17 @@ local_css()
 def load_models_silent():
     try:
         from utils.inference import ArchaeologicalAnalyzer
-        with open('configs/config.yaml', 'r') as f:
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        cfg_path = os.path.join(project_root, 'configs', 'config.yaml')
+        if not os.path.exists(cfg_path):
+            cfg_path = 'configs/config.yaml'
+            
+        with open(cfg_path, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)
-        byol_ckpt     = os.path.join(config['model']['checkpoint_dir'], 'byol_final.pth')
-        analysis_ckpt = os.path.join(config['analysis_heads']['checkpoint_dir'], 'analysis_heads_final.pth')
+            
+        byol_ckpt = os.path.join(project_root, config['model']['checkpoint_dir'], 'byol_final.pth')
+        analysis_ckpt = os.path.join(project_root, config['analysis_heads']['checkpoint_dir'], 'analysis_heads_final.pth')
+        
         analyzer = ArchaeologicalAnalyzer(
             byol_ckpt=byol_ckpt,
             analysis_ckpt=analysis_ckpt,

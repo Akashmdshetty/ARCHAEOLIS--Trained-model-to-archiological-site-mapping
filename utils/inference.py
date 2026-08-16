@@ -70,18 +70,23 @@ class ArchaeologicalAnalyzer:
                        2: np.array([50, 160, 50])}   # green      – Vegetation
 
     def __init__(self,
-                 byol_ckpt:     str = "models/checkpoints/ssl/byol_final.pth",
-                 analysis_ckpt: str = "models/checkpoints/analysis/analysis_heads_final.pth",
+                 byol_ckpt:     str = None,
+                 analysis_ckpt: str = None,
                  img_size:      int = 224):
 
         self.img_size = img_size
         self.device   = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+        root_dir = pathlib.Path(__file__).parent.parent
+        if not byol_ckpt:
+            byol_ckpt = str(root_dir / "models" / "checkpoints" / "ssl" / "byol_final.pth")
+        if not analysis_ckpt:
+            analysis_ckpt = str(root_dir / "models" / "checkpoints" / "analysis" / "analysis_heads_final.pth")
+
         # ── Build encoder ──────────────────────────────────────────────────
         base = get_resnet_encoder(pretrained=False)
         if os.path.exists(byol_ckpt):
             state = torch.load(byol_ckpt, map_location='cpu')
-            # BYOL checkpoint keys match ResNetEncoder directly (model.conv1.weight etc.)
             base.load_state_dict(state, strict=False)
             print(f"[Inference] Loaded encoder from {byol_ckpt}")
         else:
@@ -101,7 +106,7 @@ class ArchaeologicalAnalyzer:
             print(f"[Inference] Analysis checkpoint not found at '{analysis_ckpt}', using random weights.")
 
         # ── Build Satellite 5-Class Classifier ────────────────────────────────
-        sat_ckpt = "models/checkpoints/classifier/sat_classifier_best.pth"
+        sat_ckpt = str(root_dir / "models" / "checkpoints" / "classifier" / "sat_classifier_best.pth")
         self.sat_classes = ["cloudy", "desert", "green_area", "vehicles", "water"]
         from data.split_and_train_sat_data import SatelliteClassifier
         self.full_sat_model = SatelliteClassifier(base, ClassifierHead(input_dim=512, num_classes=5, hidden_dim=512)).to(self.device).eval()
