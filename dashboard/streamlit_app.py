@@ -652,22 +652,41 @@ def run_analysis_pipeline(image_input):
         # High-speed computer-vision multi-spectral analysis fallback
         h, w = img_np.shape[:2]
         gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
-        hsv  = cv2.cvtColor(img_np, cv2.COLOR_RGB2HSV)
         
-        # 1. Vegetation mask (HSV Green Range)
-        ve_mask = cv2.inRange(hsv, (30, 35, 30), (85, 255, 255))
+        # 1. High-precision Vegetation mask (Excess Green Index + NDVI approximation)
+        R = img_np[:, :, 0].astype(np.float32)
+        G = img_rgb[:, :, 1].astype(np.float32) if 'img_rgb' in locals() else img_np[:, :, 1].astype(np.float32)
+        B = img_np[:, :, 2].astype(np.float32)
+        exg = 2.0 * G - R - B
+        ndvi_approx = (G - R) / (G + R + 1e-5)
+        hsv = cv2.cvtColor(img_np, cv2.COLOR_RGB2HSV)
+        sat = hsv[:, :, 1]
+        hue = hsv[:, :, 0]
         
-        # 2. Ruins mask (Structural contours & closed polygon building shapes)
+        veg_condition = (exg > 12.0) & (ndvi_approx > 0.06) & (sat > 35) & (hue >= 30) & (hue <= 90)
+        ve_mask = (veg_condition * 255).astype(np.uint8)
+        k_veg = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        ve_mask = cv2.morphologyEx(ve_mask, cv2.MORPH_OPEN, k_veg)
+        
+        # 2. High-precision Ruins & Wall Foundation mask
         blur = cv2.GaussianBlur(gray, (5, 5), 0)
-        edges = cv2.Canny(blur, 60, 160)
+        edges = cv2.Canny(blur, 40, 140)
+        k_h = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 1))
+        k_v = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 7))
+        walls_h = cv2.morphologyEx(edges, cv2.MORPH_OPEN, k_h)
+        walls_v = cv2.morphologyEx(edges, cv2.MORPH_OPEN, k_v)
+        walls = cv2.bitwise_or(walls_h, walls_v)
+        
+        k_close = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        ruins_detected = cv2.dilate(walls, k_close, iterations=1)
+        
         ru_mask = np.zeros((h, w), dtype=np.uint8)
-        contours_r, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        for c in contours_r:
+        contours, _ = cv2.findContours(ruins_detected, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for c in contours:
             area = cv2.contourArea(c)
-            if 40 < area < 3500:
-                peri = cv2.arcLength(c, True)
-                approx = cv2.approxPolyDP(c, 0.04 * peri, True)
-                if len(approx) in [4, 5, 6, 8]:
+            if area > 15:
+                peri = cv2.arcLength(c, False)
+                if peri > 30:
                     cv2.drawContours(ru_mask, [c], -1, 255, -1)
         
         # 3. Erosion Map (High terrain variance / bare soil regions excluding vegetation)
