@@ -56,65 +56,82 @@ def create_satellite_scanner_composite(base_rgb, ruins_mask, veg_mask, erosion_m
                                        show_ruins=True, show_veg=True, show_erosion=True, show_faults=True, show_artifacts=True, show_hud=True):
     """
     Creates a multi-layered high-tech satellite scan composite image.
-    Layer 1: Real satellite base image (RGB)
-    Layer 2: Multi-spectral Vegetation (NDVI Emerald Green)
-    Layer 3: Soil Erosion LiDAR / Thermal Heatmap (Yellow/Orange gradient)
-    Layer 4: Structural Ruin Contours & Foundations (Neon Red/Magenta)
-    Layer 5: Geological Fault Fractures (Purple/Violet)
+    Layer 1: Real satellite base image (RGB) - preserved with high clarity
+    Layer 2: Multi-spectral Vegetation (NDVI Emerald Green translucent)
+    Layer 3: Soil Erosion LiDAR / Thermal Heatmap (Yellow/Orange subtle hotspots)
+    Layer 4: Structural Ruin Contours & Foundations (Neon Red outlines)
+    Layer 5: Geological Fault Lineaments (Violet/Purple fracture lines)
     Layer 6: Artifact Bounding Boxes (Neon Blue)
     Layer 7: Cybernetic Scanner HUD (GPS Coords, Target Reticle, Scale Brackets)
     """
     h, w = base_rgb.shape[:2]
     composite = base_rgb.copy()
     
-    # 1. Vegetation Layer (Emerald Green)
-    if show_veg and veg_mask is not None and np.any(veg_mask > 0):
+    # 1. Vegetation Layer (Emerald Green - Translucent Tint)
+    if show_veg and veg_mask is not None:
         veg_bin = (veg_mask > 128).astype(np.uint8) if veg_mask.dtype != np.uint8 else (veg_mask > 0).astype(np.uint8)
         if veg_bin.any():
             veg_layer = composite.copy()
             veg_layer[veg_bin > 0] = [0, 230, 118]
-            composite = cv2.addWeighted(veg_layer, 0.35, composite, 0.65, 0)
+            composite[veg_bin > 0] = cv2.addWeighted(veg_layer[veg_bin > 0], 0.35, composite[veg_bin > 0], 0.65, 0)
 
-    # 2. Erosion Risk Thermal Heatmap Layer
+    # 2. Erosion Risk Thermal Heatmap Layer (Yellow/Orange Thermal Hotspot Marks)
     if show_erosion and erosion_map is not None:
         er_norm = cv2.resize(erosion_map.astype(np.float32), (w, h))
-        er_norm = np.clip(er_norm, 0.0, 1.0)
-        er_color = np.zeros((h, w, 3), dtype=np.uint8)
-        er_color[:, :, 0] = np.uint8(er_norm * 255)         # Red
-        er_color[:, :, 1] = np.uint8(er_norm * 180)         # Green
-        er_color[:, :, 2] = np.uint8((1.0 - er_norm) * 40)  # Blue
-        
-        mask_er = er_norm > 0.2
+        er_min, er_max = er_norm.min(), er_norm.max()
+        if er_max - er_min > 0.001:
+            er_scaled = (er_norm - er_min) / (er_max - er_min)
+        else:
+            er_scaled = np.zeros_like(er_norm)
+            
+        mask_er = er_scaled > 0.68
         if mask_er.any():
-            er_blend = composite.copy()
-            er_blend[mask_er] = cv2.addWeighted(er_color[mask_er], 0.40, composite[mask_er], 0.60, 0)
-            composite = er_blend
+            er_color = np.zeros((h, w, 3), dtype=np.uint8)
+            er_color[:, :, 0] = np.uint8(np.clip(er_scaled * 255, 0, 255))
+            er_color[:, :, 1] = np.uint8(np.clip(er_scaled * 170, 0, 255))
+            er_color[:, :, 2] = 0
+            composite[mask_er] = cv2.addWeighted(er_color[mask_er], 0.40, composite[mask_er], 0.60, 0)
+            
+            er_bin = (er_scaled > 0.72).astype(np.uint8)
+            contours_er, _ = cv2.findContours(er_bin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cv2.drawContours(composite, contours_er, -1, (255, 170, 0), 2)
 
-    # 3. Structural Ruin Contour & Foundation Layer (Neon Red with White edge outline)
-    if show_ruins and ruins_mask is not None and np.any(ruins_mask > 0):
+    # 3. Structural Ruin Contour & Foundation Layer (Neon Red Building Foundations & Contours)
+    if show_ruins and ruins_mask is not None:
         ruin_bin = (ruins_mask > 128).astype(np.uint8) if ruins_mask.dtype != np.uint8 else (ruins_mask > 0).astype(np.uint8)
         if ruin_bin.any():
             ruin_layer = composite.copy()
             ruin_layer[ruin_bin > 0] = [255, 45, 85]
-            composite = cv2.addWeighted(ruin_layer, 0.50, composite, 0.50, 0)
+            composite[ruin_bin > 0] = cv2.addWeighted(ruin_layer[ruin_bin > 0], 0.45, composite[ruin_bin > 0], 0.55, 0)
             
             contours, _ = cv2.findContours(ruin_bin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             cv2.drawContours(composite, contours, -1, (255, 255, 255), 2)
-            cv2.drawContours(composite, contours, -1, (255, 45, 85), 1)
+            cv2.drawContours(composite, contours, -1, (255, 45, 85), 2)
 
-    # 4. Geological Fault Lines (Purple/Violet)
-    if show_faults and faults_mask is not None and np.any(faults_mask > 0):
-        f_bin = (faults_mask > 0.35).astype(np.uint8) if faults_mask.dtype != np.uint8 else (faults_mask > 0).astype(np.uint8)
-        if f_bin.any():
+    # 4. Geological Fault Fractures (Purple/Violet Lineament Marks & Fracture Outlines)
+    if show_faults and faults_mask is not None:
+        f_norm = cv2.resize(faults_mask.astype(np.float32), (w, h))
+        f_min, f_max = f_norm.min(), f_norm.max()
+        if f_max - f_min > 0.001:
+            f_scaled = (f_norm - f_min) / (f_max - f_min)
+        else:
+            f_scaled = np.zeros_like(f_norm)
+            
+        mask_f = f_scaled > 0.70
+        if mask_f.any():
             fault_layer = composite.copy()
-            fault_layer[f_bin > 0] = [175, 82, 222]
-            composite = cv2.addWeighted(fault_layer, 0.55, composite, 0.45, 0)
+            fault_layer[mask_f] = [175, 82, 222]
+            composite[mask_f] = cv2.addWeighted(fault_layer[mask_f], 0.45, composite[mask_f], 0.55, 0)
+            
+            f_bin = (f_scaled > 0.75).astype(np.uint8)
+            contours_f, _ = cv2.findContours(f_bin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cv2.drawContours(composite, contours_f, -1, (220, 120, 255), 2)
 
     # 5. Artifact Signal Detection Boxes
     if show_artifacts and artifacts:
         for box in artifacts:
             conf, x, y, bw, bh = box
-            if conf > 0.4:
+            if conf > 0.35:
                 x1 = int((x - bw/2) * w)
                 y1 = int((y - bh/2) * h)
                 x2 = int((x + bw/2) * w)

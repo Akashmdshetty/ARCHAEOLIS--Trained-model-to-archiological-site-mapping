@@ -231,6 +231,8 @@ class ArchaeologicalAnalyzer:
             "segmentation_overlay": seg_overlay,
             "raw_ruin_mask":        ruin_mask_np,
             "raw_veg_mask":         veg_mask_np,
+            "raw_erosion_map":      eros_sig.cpu().numpy(),
+            "raw_fault_map":        fault_sig.cpu().numpy(),
             "erosion_heatmap":      erosion_heatmap,
             "fault_mask":           fault_rgb,
             "risk_summary":         summary,

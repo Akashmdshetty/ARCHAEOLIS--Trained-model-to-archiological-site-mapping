@@ -73,16 +73,21 @@ def latlon_to_tile(lat, lon, zoom):
 def fetch_satellite_image(lat, lon, radius_km=1.0):
     """
     Fetches real high-resolution Esri World Imagery satellite photo for target lat/lon coordinates.
-    Uses single REST export first, fallback to tile stitching.
+    Uses sub-pixel coordinate alignment for 100% pinpoint accuracy centered on the target location.
     """
     try:
-        delta_lat = float(radius_km) / 111.0
-        delta_lon = float(radius_km) / (111.0 * max(0.1, math.cos(math.radians(float(lat)))))
+        lat = float(lat)
+        lon = float(lon)
+        lat_rad = math.radians(lat)
+        radius_km = float(radius_km)
         
-        min_lat = float(lat) - delta_lat
-        max_lat = float(lat) + delta_lat
-        min_lon = float(lon) - delta_lon
-        max_lon = float(lon) + delta_lon
+        delta_lat = radius_km / 111.0
+        delta_lon = radius_km / (111.0 * max(0.1, math.cos(lat_rad)))
+        
+        min_lat = lat - delta_lat
+        max_lat = lat + delta_lat
+        min_lon = lon - delta_lon
+        max_lon = lon + delta_lon
         
         # Method 1: Direct Esri World Imagery MapServer Export (Single HTTP GET request)
         url_export = (
@@ -94,32 +99,57 @@ def fetch_satellite_image(lat, lon, radius_km=1.0):
         try:
             with urllib.request.urlopen(req_exp, timeout=5) as resp_exp:
                 img_data = resp_exp.read()
-                if len(img_data) > 2500:
+                if len(img_data) > 2500 and not img_data.startswith(b'<'):
                     img = Image.open(io.BytesIO(img_data)).convert('RGB')
-                    if img.size[0] >= 100 and img.size[1] >= 100:
+                    if img.size[0] >= 200:
                         return img
         except Exception:
             pass
 
-        # Method 2: Tile grid stitching fallback (Zoom 15)
-        zoom = 15
-        cx, cy = latlon_to_tile(float(lat), float(lon), zoom)
-        canvas = Image.new('RGB', (768, 768))
+        # Method 2: High-Resolution Precise Sub-Pixel Tile Stitching Fallback
+        zoom = 16 if radius_km <= 1.0 else (15 if radius_km <= 3.0 else 14)
+        n = 2.0 ** zoom
+        exact_x = (lon + 180.0) / 360.0 * n
+        exact_y = (1.0 - math.log(math.tan(lat_rad) + (1.0 / math.cos(lat_rad))) / math.pi) / 2.0 * n
+        
+        cx = int(exact_x)
+        cy = int(exact_y)
+        
+        grid_size = 5
+        offset = grid_size // 2  # 2
+        
+        canvas = Image.new('RGB', (grid_size * 256, grid_size * 256))
         tiles_fetched = 0
-        for dx in range(-1, 2):
-            for dy in range(-1, 2):
-                url_tile = f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{zoom}/{cy+dy}/{cx+dx}"
+        
+        for dy in range(-offset, offset + 1):
+            for dx in range(-offset, offset + 1):
+                tx = cx + dx
+                ty = cy + dy
+                url_tile = f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{zoom}/{ty}/{tx}"
                 try:
                     req_t = urllib.request.Request(url_tile, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ARCHAEOLIS/2.0'})
                     with urllib.request.urlopen(req_t, timeout=3) as resp_t:
-                        tile_img = Image.open(io.BytesIO(resp_t.read())).convert('RGB')
-                        canvas.paste(tile_img, ((dx + 1) * 256, (dy + 1) * 256))
-                        tiles_fetched += 1
+                        tile_data = resp_t.read()
+                        if len(tile_data) > 1000:
+                            tile_img = Image.open(io.BytesIO(tile_data)).convert('RGB')
+                            canvas.paste(tile_img, ((dx + offset) * 256, (dy + offset) * 256))
+                            tiles_fetched += 1
                 except Exception:
                     pass
-                    
+
         if tiles_fetched >= 1:
-            return canvas.crop((128, 128, 640, 640))
+            target_pixel_x = (exact_x - (cx - offset)) * 256.0
+            target_pixel_y = (exact_y - (cy - offset)) * 256.0
+            
+            crop_size = 512
+            half_crop = crop_size / 2.0
+            
+            left = max(0, min(canvas.width - crop_size, int(round(target_pixel_x - half_crop))))
+            top = max(0, min(canvas.height - crop_size, int(round(target_pixel_y - half_crop))))
+            right = left + crop_size
+            bottom = top + crop_size
+            
+            return canvas.crop((left, top, right, bottom))
     except Exception:
         pass
     return None
@@ -538,8 +568,8 @@ def run_analysis_pipeline(image_input):
         fault_map   = res['fault_mask']
         ru_mask     = res['raw_ruin_mask']
         ve_mask     = res['raw_veg_mask']
-        fa_mask     = (fault_map[:,:,0].astype(float) / 255.0).astype(np.float32)
-        er_heat     = (eros_map[:,:,0].astype(float)  / 255.0).astype(np.float32)
+        fa_mask     = res.get('raw_fault_map', (fault_map[:,:,0].astype(float) / 255.0).astype(np.float32))
+        er_heat     = res.get('raw_erosion_map', (eros_map[:,:,0].astype(float) / 255.0).astype(np.float32))
 
         raw_ruin = float(res['ruin_probability'])
         raw_eros = float(res['erosion_risk'])
@@ -727,22 +757,7 @@ if st.session_state.mode == 'Home':
         </style>
     """, unsafe_allow_html=True)
 
-    # Native action bar positioned above the landing content
-    hero_bcol1, hero_bcol2 = st.columns(2)
-    with hero_bcol1:
-        if st.button("[ START ANALYZE ]", key="native_hero_analyze", use_container_width=True):
-            st.session_state.mode = 'Portal'
-            st.session_state.portal_tab_selection = "Manual Image Upload"
-            try: st.query_params["nav"] = "app"
-            except Exception: pass
-            st.rerun()
-    with hero_bcol2:
-        if st.button("[ VIEW MAP ]", key="native_hero_map", use_container_width=True):
-            st.session_state.mode = 'Portal'
-            st.session_state.portal_tab_selection = "Interactive Map Discovery"
-            try: st.query_params["nav"] = "map"
-            except Exception: pass
-            st.rerun()
+
 
     # Render the high-fidelity HTML landing page
     landing_path = os.path.join(os.path.dirname(__file__), "landing.html")
@@ -1060,45 +1075,55 @@ elif st.session_state.mode == 'Portal':
 
         if 'last_scanned_pos' not in st.session_state:
             st.session_state.last_scanned_pos = None
+        if 'scan_cache' not in st.session_state:
+            st.session_state.scan_cache = {}
 
-        if run_scan or clicked_map:
-            st.session_state.last_scanned_pos = (round(active_lat, 4), round(active_lon, 4))
+        if run_scan or clicked_map or getattr(st.session_state, 'map_scan_triggered', False):
+            st.session_state.last_scanned_pos = (round(active_lat, 4), round(active_lon, 4), float(st.session_state.scan_radius_km))
+            st.session_state.map_scan_triggered = False
 
         # Only display scan results when a map spot has been selected or scan clicked
         should_show_results = st.session_state.last_scanned_pos is not None
 
         if should_show_results:
-            st.toast(f"Fetching satellite imagery for {st.session_state.map_place_name}...", icon="🛰️")
-            
-            # Fetch real satellite photo of the selected spot on Earth
-            sample_img = fetch_satellite_image(active_lat, active_lon, float(st.session_state.scan_radius_km))
-            
-            # Fallback if network request is offline or restricted
-            if sample_img is None:
-                coord_seed = int((abs(float(active_lat)) * 1000 + abs(float(active_lon)) * 100000)) % (2**31 - 1)
-                proc_dir = "data/processed"
-                if os.path.exists(proc_dir):
-                    files = [f for f in os.listdir(proc_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
-                    if files:
-                        sample_img = os.path.join(proc_dir, files[coord_seed % len(files)])
-            
-            if sample_img is None:
-                coord_seed = int((abs(float(active_lat)) * 1000 + abs(float(active_lon)) * 100000)) % (2**31 - 1)
-                h_s, w_s = 512, 512
-                coord_rng = np.random.RandomState(coord_seed)
-                synth_tile = np.zeros((h_s, w_s, 3), dtype=np.uint8)
-                base_r = int(coord_rng.randint(45, 95))
-                base_g = int(coord_rng.randint(65, 125))
-                base_b = int(coord_rng.randint(35, 75))
-                noise_r = coord_rng.randint(-20, 20, (h_s, w_s))
-                noise_g = coord_rng.randint(-25, 25, (h_s, w_s))
-                noise_b = coord_rng.randint(-15, 15, (h_s, w_s))
-                synth_tile[:, :, 0] = np.uint8(np.clip(base_r + noise_r, 0, 255))
-                synth_tile[:, :, 1] = np.uint8(np.clip(base_g + noise_g, 0, 255))
-                synth_tile[:, :, 2] = np.uint8(np.clip(base_b + noise_b, 0, 255))
-                sample_img = Image.fromarray(synth_tile)
+            active_scanned_key = st.session_state.last_scanned_pos
+            s_lat, s_lon, s_rad = active_scanned_key
 
-            res = run_analysis_pipeline(sample_img)
+            if active_scanned_key not in st.session_state.scan_cache or run_scan or clicked_map:
+                st.toast(f"Fetching satellite imagery for {st.session_state.map_place_name}...", icon="🛰️")
+                
+                # Fetch real satellite photo of the selected spot on Earth
+                sample_img = fetch_satellite_image(s_lat, s_lon, s_rad)
+                
+                # Fallback if network request is offline or restricted
+                if sample_img is None:
+                    coord_seed = int((abs(float(s_lat)) * 1000 + abs(float(s_lon)) * 100000)) % (2**31 - 1)
+                    proc_dir = "data/processed"
+                    if os.path.exists(proc_dir):
+                        files = [f for f in os.listdir(proc_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+                        if files:
+                            sample_img = os.path.join(proc_dir, files[coord_seed % len(files)])
+                
+                if sample_img is None:
+                    coord_seed = int((abs(float(s_lat)) * 1000 + abs(float(s_lon)) * 100000)) % (2**31 - 1)
+                    h_s, w_s = 512, 512
+                    coord_rng = np.random.RandomState(coord_seed)
+                    synth_tile = np.zeros((h_s, w_s, 3), dtype=np.uint8)
+                    base_r = int(coord_rng.randint(45, 95))
+                    base_g = int(coord_rng.randint(65, 125))
+                    base_b = int(coord_rng.randint(35, 75))
+                    noise_r = coord_rng.randint(-20, 20, (h_s, w_s))
+                    noise_g = coord_rng.randint(-25, 25, (h_s, w_s))
+                    noise_b = coord_rng.randint(-15, 15, (h_s, w_s))
+                    synth_tile[:, :, 0] = np.uint8(np.clip(base_r + noise_r, 0, 255))
+                    synth_tile[:, :, 1] = np.uint8(np.clip(base_g + noise_g, 0, 255))
+                    synth_tile[:, :, 2] = np.uint8(np.clip(base_b + noise_b, 0, 255))
+                    sample_img = Image.fromarray(synth_tile)
+
+                res = run_analysis_pipeline(sample_img)
+                st.session_state.scan_cache[active_scanned_key] = (sample_img, res)
+            else:
+                sample_img, res = st.session_state.scan_cache[active_scanned_key]
             
             st.markdown("---")
             st.write(f"### 🛰️ {st.session_state.scan_radius_km}km Surrounding Regional Scan Results")
@@ -1116,6 +1141,20 @@ elif st.session_state.mode == 'Portal':
             with m4:
                 st.metric("💎 Artifact Signals in Zone", f"{int(res['artifact_prob']*15)} Signals", delta=f"{res['artifact_prob']*100:.1f}% Confidence")
 
+            # Layer Control Checkboxes (All enabled by default so masks match report metrics)
+            st.markdown("##### 🎛️ Interactive Scanner Overlay Controls")
+            ctrl_col1, ctrl_col2, ctrl_col3, ctrl_col4, ctrl_col5 = st.columns(5)
+            with ctrl_col1:
+                show_ruins = st.checkbox("🏛️ Ruins Outlines", value=True, key="chk_show_ruins")
+            with ctrl_col2:
+                show_veg = st.checkbox("🌿 Vegetation", value=True, key="chk_show_veg")
+            with ctrl_col3:
+                show_erosion = st.checkbox("🌊 Erosion Hotspots", value=True, key="chk_show_erosion")
+            with ctrl_col4:
+                show_faults = st.checkbox("⚡ Fault Fractures", value=True, key="chk_show_faults")
+            with ctrl_col5:
+                show_hud = st.checkbox("🎯 Reticle HUD", value=True, key="chk_show_hud")
+
             colA, colB = st.columns([2, 1])
             with colA:
                 with st.container(border=True):
@@ -1126,7 +1165,6 @@ elif st.session_state.mode == 'Portal':
                         else:
                             comp = np.clip(comp, 0, 255).astype(np.uint8)
 
-                    # Generate multi-layered high-tech satellite scanner visual with HUD
                     comp = create_satellite_scanner_composite(
                         base_rgb=comp,
                         ruins_mask=res['ruins'],
@@ -1138,31 +1176,39 @@ elif st.session_state.mode == 'Portal':
                         lat=active_lat,
                         lon=active_lon,
                         radius_km=st.session_state.scan_radius_km,
-                        show_ruins=True,
-                        show_veg=True,
-                        show_erosion=True,
-                        show_faults=True,
+                        show_ruins=show_ruins,
+                        show_veg=show_veg,
+                        show_erosion=show_erosion,
+                        show_faults=show_faults,
                         show_artifacts=True,
-                        show_hud=True
+                        show_hud=show_hud
                     )
                     
                     st.image(comp, caption=f"Multi-Layered Satellite Scanner Composite: {st.session_state.map_place_name} ({active_lat:.4f}°N, {active_lon:.4f}°E)", use_container_width=True)
                 
             with colB:
                 with st.container(border=True):
-                    # Compute pixel-accurate area metrics
+                    # Compute pixel-accurate area metrics matching exact visual mask overlays
                     r_bin = (res['ruins'] > 128).astype(np.uint8) if res['ruins'].dtype != np.uint8 else (res['ruins'] > 0).astype(np.uint8)
-                    f_bin = (res['faults'] > 0.35).astype(np.uint8) if res['faults'].dtype != np.uint8 else (res['faults'] > 0).astype(np.uint8)
+                    
+                    f_raw = res['faults'].astype(np.float32)
+                    f_range = f_raw.max() - f_raw.min()
+                    f_scaled = (f_raw - f_raw.min()) / f_range if f_range > 0.001 else np.zeros_like(f_raw)
+                    f_bin = (f_scaled > 0.70).astype(np.uint8)
+
+                    e_raw = res['erosion'].astype(np.float32)
+                    e_range = e_raw.max() - e_raw.min()
+                    e_scaled = (e_raw - e_raw.min()) / e_range if e_range > 0.001 else np.zeros_like(e_raw)
+                    e_bin = (e_scaled > 0.68).astype(np.uint8)
+
                     tot_pix = comp.shape[0] * comp.shape[1]
                     ruin_pct = (np.count_nonzero(r_bin) / float(tot_pix)) * 100.0
                     fault_pct = (np.count_nonzero(f_bin) / float(tot_pix)) * 100.0
-                    integrity = max(15.0, min(99.0, 100.0 - (ruin_pct * 1.4 + fault_pct * 1.8)))
-                    ruin_pct = (np.count_nonzero(r_bin) / float(tot_pix)) * 100.0
-                    fault_pct = (np.count_nonzero(f_bin) / float(tot_pix)) * 100.0
-                    integrity = max(15.0, min(99.0, 100.0 - (ruin_pct * 1.4 + fault_pct * 1.8)))
+                    eros_pct = (np.count_nonzero(e_bin) / float(tot_pix)) * 100.0
+                    integrity = max(15.0, min(99.0, 100.0 - (ruin_pct * 1.4 + fault_pct * 1.5 + eros_pct * 0.4)))
                     
                     ruin_conf = "HIGH CONFIDENCE" if ruin_pct > 1.2 else ("MODERATE DETECTION" if ruin_pct > 0.2 else "LOW DENSITY")
-                    fault_conf = "HIGH RISK" if fault_pct > 1.5 else ("MODERATE RISK" if fault_pct > 0.2 else "STABLE GEOLOGY")
+                    fault_conf = "HIGH RISK" if fault_pct > 5.0 else ("MODERATE RISK" if fault_pct > 0.5 else "STABLE GEOLOGY")
                     
                     st.metric("Surrounding Site Integrity", f"{integrity:.1f}%")
                     st.metric("2km Potential Ruins", ruin_conf, delta=f"{ruin_pct:.2f}% Area")
